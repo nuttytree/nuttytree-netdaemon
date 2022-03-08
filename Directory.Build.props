@@ -1,0 +1,56 @@
+<!-- This is automatically imported into every .csproj -->
+<Project>
+  <PropertyGroup>
+    <ParentPath>$([System.IO.Path]::GetDirectoryName($(MSBuildProjectDirectory)))</ParentPath>
+
+    <IsSrcFolder>$(ParentPath.EndsWith('src', StringComparison.OrdinalIgnoreCase))</IsSrcFolder>
+
+    <!-- Handle both flat and structured test folders: tests\MyProject.UnitTests and tests\unit\MyProject.UnitTests -->
+    <IsTestsFolder>$(ParentPath.EndsWith('tests', StringComparison.OrdinalIgnoreCase))</IsTestsFolder>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Authors>Chris Nussbaum</Authors>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RunSettingsFilePath>$(MSBuildThisFileDirectory)\.runsettings</RunSettingsFilePath>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+  </PropertyGroup>
+  
+  <!-- StyleCop -->
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)\stylecop.json" Link="stylecop.json" />
+
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(IsSrcFolder)' == 'true'">
+    <RuntimeIdentifier Condition="'$(DOTNET_RUNNING_IN_CONTAINER)' == 'true'">linux-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsSrcFolder)' == 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="6.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.0.64">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(IsTestsFolder)' == 'true'">
+    <IsPackable>false</IsPackable>
+    <RuntimeIdentifier Condition="'$(DOTNET_RUNNING_IN_CONTAINER)' == 'true'">linux-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsTestsFolder)' == 'true'">
+    <PackageReference Include="coverlet.collector" Version="3.1.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>
