@@ -1,6 +1,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS builder
 
-COPY --chown=app:app . .
+COPY . /app
+
+WORKDIR /app
 
 RUN dotnet restore ./NuttyTree.NetDaemon.sln && \
 dotnet build --no-restore -c Release /p:SelfContained=false ./NuttyTree.NetDaemon.sln
@@ -13,5 +15,7 @@ RUN dotnet publish --no-build --self-contained false -c Release -o out ./src/Nut
 
 FROM mcr.microsoft.com/dotnet/aspnet:6.0
 
-COPY --chown=app:app --from=publisher /out .
+WORKDIR /app
+
+COPY --from=publisher /app/out .
 ENTRYPOINT ["dotnet", "NuttyTree.NetDaemon.dll"]
