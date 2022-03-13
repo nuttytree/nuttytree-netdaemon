@@ -169,7 +169,7 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
                     var reminderNotice = reminderNotices[new Random().Next(reminderNotices.Count)];
 #pragma warning restore CA5394 // Do not use insecure randomness
 
-                    services.Notify.AlexaMediaDevicesEverywhere(new NotifyAlexaMediaDevicesEverywhereParameters
+                    services.Notify.AlexaMediaDevicesInside(new NotifyAlexaMediaDevicesInsideParameters
                     {
                         Data = new { type = "announce" },
                         Message = $"{reminderNotice} {nextAppointmentToRemind.ReminderMessage}",
