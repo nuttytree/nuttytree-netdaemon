@@ -361,5 +361,5 @@ MigrationBackup/
 .gradle/
 .idea/
 
-# appsettings.Development.json
+appsettings.Development.json
 data/*
