@@ -165,15 +165,19 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
 
         private void CheckForKnownLocationCoordinates()
         {
-            if (Calendar == FamilyCalendar &&
-                (Location?.Replace(" ", string.Empty, StringComparison.Ordinal)?.Contains("18275Evener", StringComparison.OrdinalIgnoreCase) == true
+            if (Location == null)
+            {
+                return;
+            }
+            else if (Calendar == FamilyCalendar &&
+                (Location.Replace(" ", string.Empty, StringComparison.Ordinal)?.Contains("18275Evener", StringComparison.OrdinalIgnoreCase) == true
                 || string.Equals(Location, "Home", StringComparison.OrdinalIgnoreCase)))
             {
                 // If the location is home set the home location
                 LocationCoordinates = HomeLocation;
             }
             else if (Calendar == ScoutsCalendar &&
-                (Location!.Contains("Various Sites in EP", StringComparison.OrdinalIgnoreCase)
+                (Location.Contains("Various Sites in EP", StringComparison.OrdinalIgnoreCase)
                 || Location.Contains("Other or TBD", StringComparison.OrdinalIgnoreCase)
                 || Location.Contains("Pax Christi", StringComparison.OrdinalIgnoreCase)))
             {
@@ -181,7 +185,7 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
                 LocationCoordinates = DefaultScoutsLocation;
             }
             else if (Calendar == ScoutsCalendar &&
-                (Location!.Contains("Zoom", StringComparison.OrdinalIgnoreCase)
+                (Location.Contains("Zoom", StringComparison.OrdinalIgnoreCase)
                 || Location.Contains("Online", StringComparison.OrdinalIgnoreCase)))
             {
                 // If it is online it will be at home
