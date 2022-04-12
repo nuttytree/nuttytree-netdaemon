@@ -38,7 +38,7 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
         public ReminderType? NextReminder { get; set; }
 
         [JsonIgnore]
-        public bool IsAtHome => LocationCoordinates == HomeLocation;
+        public bool IsAtHome => HomeLocation.Equals(LocationCoordinates);
 
         [JsonIgnore]
         public DateTime LeaveTime => ArriveTime.AddMinutes(-1 * TravelMinutes ?? 0);
