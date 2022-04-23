@@ -189,7 +189,7 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
 
         private bool SkipNotifyFor(Appointment appointment)
         {
-            if (appointment.NextReminder == ReminderType.TwoHours && bool.TryParse(entities.BinarySensor.MasterBedMelissa.State, out var melissaInBed) && melissaInBed)
+            if (appointment.NextReminder == ReminderType.TwoHours && string.Equals(entities.BinarySensor.MasterBedMelissa.State, "on", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
