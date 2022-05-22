@@ -97,9 +97,9 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
 
         private async Task UpdateAppointmentsAsync()
         {
-            var homeAssistantAppointments = (await hassCalendarApi.GetAppointmentsAsync(FamilyCalendar, DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow.AddDays(30)))
+            var homeAssistantAppointments = (await hassCalendarApi.GetAppointmentsAsync(FamilyCalendar, DateTime.Now.AddMinutes(-5), DateTime.Now.AddDays(30)))
                 .Select(a => Appointment.Create(a, FamilyCalendar)).ToList();
-            homeAssistantAppointments.AddRange((await hassCalendarApi.GetAppointmentsAsync(ScoutsCalendar, DateTime.UtcNow, DateTime.UtcNow.AddDays(30)))
+            homeAssistantAppointments.AddRange((await hassCalendarApi.GetAppointmentsAsync(ScoutsCalendar, DateTime.Now, DateTime.Now.AddDays(30)))
                 .Select(a => Appointment.Create(a, ScoutsCalendar)).ToList());
 
             // Remove old appointments
@@ -114,10 +114,6 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
                 if (appointment == null)
                 {
                     appointments.Add(homeAssistantAppointment);
-                }
-                else
-                {
-                    appointment.Update(homeAssistantAppointment);
                 }
             }
 

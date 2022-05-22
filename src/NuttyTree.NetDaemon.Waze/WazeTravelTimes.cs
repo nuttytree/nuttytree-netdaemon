@@ -33,7 +33,7 @@ namespace NuttyTree.NetDaemon.Waze
             }
             else
             {
-                var offset = Convert.ToInt32((arriveTime - DateTime.UtcNow).TotalMinutes);
+                var offset = Convert.ToInt32((arriveTime - DateTime.Now).TotalMinutes);
                 var route = await wazeApi.GetRouteAsync(fromLocation, toLocation, offset);
                 var miles = (route.Response?.Results?.Select(s => s.Length).Sum() ?? 0) / 1609.0;  // Convert from meters to miles
                 var minutes = (route.Response?.TotalRouteTime ?? 0) / 60.0; // Convert from seconds to minutes
