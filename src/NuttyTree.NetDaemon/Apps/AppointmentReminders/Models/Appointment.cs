@@ -1,4 +1,7 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json.Serialization;
 using NuttyTree.NetDaemon.Apps.AppointmentReminders.HomeAssistant.Models;
 using NuttyTree.NetDaemon.Waze.Models;
 using static NuttyTree.NetDaemon.Apps.AppointmentReminders.AppointmentConstants;
@@ -16,10 +19,6 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
         public DateTime Start { get; set; }
 
         public DateTime? End { get; set; }
-
-        public DateTime Created { get; set; }
-
-        public DateTime Updated { get; set; }
 
         public bool IsAllDay { get; set; }
 
@@ -47,7 +46,7 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
         public DateTime ArriveTime => IsAtHome ? Start : Start.AddMinutes(-1 * AppointmentLeadTimeMinutes);
 
         [JsonIgnore]
-        public double MinutesTillLeaveTime => (LeaveTime - DateTime.UtcNow).TotalMinutes;
+        public double MinutesTillLeaveTime => (LeaveTime - DateTime.Now).TotalMinutes;
 
         [JsonIgnore]
         public bool HasLocation => !string.IsNullOrWhiteSpace(OverrideLocation ?? Location);
@@ -64,8 +63,8 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
             && !NeedsLocationCoordinates
             && (LastTravelTimeUpdate == DateTime.MinValue ||
                 (TravelMinutes != null
-                    && DateTime.UtcNow.AddMinutes(120 + (TravelMinutes.Value * 2) + AppointmentLeadTimeMinutes) >= Start
-                    && DateTime.UtcNow - LastTravelTimeUpdate >= TimeSpan.FromMinutes(TravelTimeUpdateIntervalMinutes)));
+                    && DateTime.Now.AddMinutes(120 + (TravelMinutes.Value * 2) + AppointmentLeadTimeMinutes) >= Start
+                    && DateTime.Now - LastTravelTimeUpdate >= TimeSpan.FromMinutes(TravelTimeUpdateIntervalMinutes)));
 
         [JsonIgnore]
         public bool ReminderIsDue => !IsAllDay && TravelMinutes != null && NextReminder != null && MinutesTillLeaveTime <= (double)NextReminder;
@@ -92,13 +91,11 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
         {
             var appointment = new Appointment
             {
-                Id = hassAppointment.Id,
+                Id = GenerateId(hassAppointment),
                 Summary = hassAppointment.Summary,
                 Location = hassAppointment.Location,
                 Start = hassAppointment.Start?.DateTime ?? hassAppointment.Start?.Date ?? DateTime.MinValue,
                 End = hassAppointment.End?.DateTime ?? hassAppointment.End?.Date,
-                Created = hassAppointment.Created,
-                Updated = hassAppointment.Updated,
                 IsAllDay = hassAppointment.IsAllDay,
                 Calendar = calendar,
             };
@@ -106,27 +103,6 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
             appointment.CheckForKnownLocationCoordinates();
 
             return appointment;
-        }
-
-        public void Update(Appointment hassAppointment)
-        {
-            if (Updated != hassAppointment.Updated)
-            {
-                Summary = hassAppointment.Summary;
-                Start = hassAppointment.Start;
-                End = hassAppointment.End;
-                Updated = hassAppointment.Updated;
-                IsAllDay = hassAppointment.IsAllDay;
-                if (Location != hassAppointment.Location)
-                {
-                    Location = hassAppointment.Location;
-                    LocationCoordinates = null;
-                    TravelMiles = null;
-                    TravelMinutes = null;
-                    LastTravelTimeUpdate = DateTime.MinValue;
-                    CheckForKnownLocationCoordinates();
-                }
-            }
         }
 
         public void SetTravelTime(TravelTime? travelTime)
@@ -160,7 +136,16 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
                 }
             }
 
-            LastTravelTimeUpdate = DateTime.UtcNow;
+            LastTravelTimeUpdate = DateTime.Now;
+        }
+
+        private static string GenerateId(HomeAssistantAppointment appointment)
+        {
+            using var sha256 = SHA256.Create();
+            var data = sha256.ComputeHash(Encoding.UTF8.GetBytes($"{appointment.Summary}.{appointment.Location}.{appointment.Start?.DateTime ?? appointment.Start?.Date}")).ToList();
+            var stringBuilder = new StringBuilder();
+            data.ForEach(b => stringBuilder.Append(b.ToString("x2", CultureInfo.InvariantCulture)));
+            return stringBuilder.ToString();
         }
 
         private void CheckForKnownLocationCoordinates()
