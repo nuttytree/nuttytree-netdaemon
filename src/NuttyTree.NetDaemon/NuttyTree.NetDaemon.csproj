@@ -9,16 +9,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JoySoftware.NetDaemon.AppModel" Version="22.7.0" />
-    <PackageReference Include="JoySoftware.NetDaemon.Runtime" Version="22.7.0" />
-    <PackageReference Include="JoySoftware.NetDaemon.HassModel" Version="22.7.0" />
-    <PackageReference Include="JoySoftware.NetDaemon.Client" Version="22.7.0" />
-    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Scheduling" Version="22.7.0" />
-    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Logging" Version="22.7.0" />
-    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Tts" Version="22.7.0" />
+    <PackageReference Include="FluentDateTime" Version="2.1.0" />
+    <PackageReference Include="JoySoftware.NetDaemon.AppModel" Version="22.23.0" />
+    <PackageReference Include="JoySoftware.NetDaemon.Runtime" Version="22.23.0" />
+    <PackageReference Include="JoySoftware.NetDaemon.HassModel" Version="22.23.0" />
+    <PackageReference Include="JoySoftware.NetDaemon.Client" Version="22.23.0" />
+    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Scheduling" Version="22.23.0" />
+    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Logging" Version="22.23.0" />
+    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Tts" Version="22.23.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
+    <PackageReference Include="Net.Codecrete.QrCodeGenerator" Version="2.0.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="5.0.0" />
-    <PackageReference Include="System.IO.Abstractions" Version="16.1.22" />
+    <PackageReference Include="System.IO.Abstractions" Version="17.0.18" />
     <PackageReference Include="System.Reactive" Version="5.0.0" />
     <PackageReference Include="YamlDotNet" Version="11.2.1" />
   </ItemGroup>
@@ -40,7 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="Microsoft.VisualStudio.Threading.Analyzers" Version="17.1.46">
+    <PackageReference Update="Microsoft.VisualStudio.Threading.Analyzers" Version="17.2.32">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
