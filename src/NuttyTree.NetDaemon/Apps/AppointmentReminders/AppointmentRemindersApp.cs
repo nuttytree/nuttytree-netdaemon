@@ -193,7 +193,7 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
             {
                 return true;
             }
-            else if (appointment.Calendar == ScoutsCalendar && appointment.Summary.Contains("cancel", StringComparison.OrdinalIgnoreCase))
+            else if (appointment.Calendar == ScoutsCalendar && appointment.Summary?.Contains("cancel", StringComparison.OrdinalIgnoreCase) == true)
             {
                 return true;
             }
