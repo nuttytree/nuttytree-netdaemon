@@ -455,11 +455,11 @@ namespace HomeAssistantGenerated
 		///<summary>Master all in Bed</summary>
 		public BinarySensorEntity MasterBedAll => new(_haContext, "binary_sensor.master_bed_all");
 		///<summary>Chris is in Bed</summary>
-		public BinarySensorEntity MasterBedChris => new(_haContext, "binary_sensor.master_bed_chris");
+		public BinarySensorEntity ChrisIsInBed => new(_haContext, "binary_sensor.chris_is_in_bed");
 		///<summary>Melissa is in Bed</summary>
-		public BinarySensorEntity MasterBedMelissa => new(_haContext, "binary_sensor.master_bed_melissa");
+		public BinarySensorEntity MelissaIsInBed => new(_haContext, "binary_sensor.binary_sensor.melissa_is_in_bed");
 		///<summary>Someone is in Bed</summary>
-		public BinarySensorEntity MasterBedSomeone => new(_haContext, "binary_sensor.master_bed_someone");
+		public BinarySensorEntity SomeoneIsInBed => new(_haContext, "binary_sensor.master_bed_someone");
 		///<summary>Master Bed Status</summary>
 		public BinarySensorEntity MasterBedStatus => new(_haContext, "binary_sensor.master_bed_status");
 		///<summary>Mayson Can Use Electronics</summary>
