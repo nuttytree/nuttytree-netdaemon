@@ -36,6 +36,8 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
 
         public ReminderType? NextReminder { get; set; }
 
+        public bool Ignore { get; set; }
+
         [JsonIgnore]
         public bool IsAtHome => HomeLocation.Equals(LocationCoordinates);
 
@@ -61,13 +63,14 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
             !IsAllDay
             && !IsAtHome
             && !NeedsLocationCoordinates
+            && !Ignore
             && (LastTravelTimeUpdate == DateTime.MinValue ||
                 (TravelMinutes != null
                     && DateTime.Now.AddMinutes(120 + (TravelMinutes.Value * 2) + AppointmentLeadTimeMinutes) >= Start
                     && DateTime.Now - LastTravelTimeUpdate >= TimeSpan.FromMinutes(TravelTimeUpdateIntervalMinutes)));
 
         [JsonIgnore]
-        public bool ReminderIsDue => !IsAllDay && TravelMinutes != null && NextReminder != null && MinutesTillLeaveTime <= (double)NextReminder;
+        public bool ReminderIsDue => !IsAllDay && !Ignore && TravelMinutes != null && NextReminder != null && MinutesTillLeaveTime <= (double)NextReminder;
 
         [JsonIgnore]
         public string ReminderMessage
@@ -96,7 +99,8 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
                 Location = hassAppointment.Location,
                 Start = hassAppointment.Start?.DateTime ?? hassAppointment.Start?.Date ?? DateTime.MinValue,
                 End = hassAppointment.End?.DateTime ?? hassAppointment.End?.Date,
-                IsAllDay = hassAppointment.IsAllDay,
+                IsAllDay = hassAppointment.IsAllDay
+                    || (hassAppointment.Start?.DateTime?.Hour == 0 && hassAppointment.Start?.DateTime?.Minute == 0 && hassAppointment.End?.DateTime?.Hour == 23 && hassAppointment.End?.DateTime?.Minute == 59),
                 Calendar = calendar,
             };
 
