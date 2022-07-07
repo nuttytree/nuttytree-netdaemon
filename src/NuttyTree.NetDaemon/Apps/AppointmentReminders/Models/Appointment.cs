@@ -100,7 +100,7 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
                 Start = hassAppointment.Start?.DateTime ?? hassAppointment.Start?.Date ?? DateTime.MinValue,
                 End = hassAppointment.End?.DateTime ?? hassAppointment.End?.Date,
                 IsAllDay = hassAppointment.IsAllDay
-                    || (hassAppointment.Start?.DateTime?.Hour == 0 && hassAppointment.Start?.DateTime?.Minute == 0 && hassAppointment.End?.DateTime?.Hour == 23 && hassAppointment.End?.DateTime?.Minute == 59),
+                    || (hassAppointment.Start?.DateTime?.Hour == 0 && hassAppointment.Start?.DateTime?.Minute == 0 && hassAppointment.End?.DateTime?.Hour == 23 && hassAppointment.End?.DateTime?.Minute >= 55),
                 Calendar = calendar,
             };
 
