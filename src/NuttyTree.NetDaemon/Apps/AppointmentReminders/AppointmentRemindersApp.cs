@@ -12,18 +12,9 @@ using static NuttyTree.NetDaemon.Apps.AppointmentReminders.AppointmentConstants;
 namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
 {
     [NetDaemonApp]
-    internal class AppointmentRemindersApp : IAsyncInitializable
+    internal class AppointmentRemindersApp
     {
-        private readonly List<string> reminderNotices = new List<string>
-        {
-            "Just a friendly reminder",
-            "Don't forget that",
-            "Remember that"
-        };
-
         private readonly IFileSystem fileSystem;
-
-        private readonly INetDaemonScheduler scheduler;
 
         private readonly IHomeAssistantCalendarApi hassCalendarApi;
 
@@ -37,40 +28,26 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
 
         private readonly string dataFile;
 
-        private List<Appointment> appointments = new List<Appointment>();
-
         public AppointmentRemindersApp(
             IConfiguration configuration,
             IFileSystem fileSystem,
-            INetDaemonScheduler scheduler,
             IHomeAssistantCalendarApi hassCalendarApi,
             IWazeTravelTimes wazeTravelTimes,
             IEntities entities,
             IServices services,
+            INetDaemonScheduler scheduler,
             ILogger<AppointmentRemindersApp> logger)
         {
             this.fileSystem = fileSystem;
-            this.scheduler = scheduler;
             this.hassCalendarApi = hassCalendarApi;
             this.wazeTravelTimes = wazeTravelTimes;
             this.entities = entities;
             this.services = services;
             this.logger = logger;
+
             var dataFolder = fileSystem.Path.GetFullPath(configuration.GetValue<string>("DataFolder"));
             fileSystem.Directory.CreateDirectory(dataFolder);
             dataFile = fileSystem.Path.GetFullPath("appointments.json", dataFolder);
-        }
-
-        public async Task InitializeAsync(CancellationToken cancellationToken)
-        {
-            if (fileSystem.File.Exists(dataFile))
-            {
-                appointments = JsonSerializer.Deserialize<List<Appointment>>(await fileSystem.File.ReadAllTextAsync(dataFile, cancellationToken)) ?? new List<Appointment>();
-            }
-            else
-            {
-                appointments = new List<Appointment>();
-            }
 
 #pragma warning disable VSTHRD101 // Avoid unsupported async delegates
             scheduler.RunEvery(TimeSpan.FromMinutes(1), DateTimeOffset.UtcNow, async () => await UpdateAppointmentsAndSendRemindersAsync());
@@ -81,21 +58,30 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
         {
             try
             {
-                await UpdateAppointmentsAsync();
+                var appointments = fileSystem.File.Exists(dataFile)
+                    ? JsonSerializer.Deserialize<List<Appointment>>(await fileSystem.File.ReadAllTextAsync(dataFile)) ?? new List<Appointment>()
+                    : new List<Appointment>();
 
-                await UpdateAppointmentCoordinatesAndTravelTimesAsync();
+                await UpdateAppointmentsAsync(appointments);
 
-                SendAppointmentReminders();
+                await UpdateAppointmentCoordinatesAndTravelTimesAsync(appointments);
+
+                SendAppointmentReminders(appointments);
 
                 await fileSystem.File.WriteAllTextAsync(dataFile, JsonSerializer.Serialize(appointments, new JsonSerializerOptions { WriteIndented = true }));
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Exception while updating appointments and sending reminders");
+                services.Notify.MobileAppPhoneChris(new NotifyMobileAppPhoneChrisParameters
+                {
+                    Title = "Appointment Reminders Exception",
+                    Message = ex.Message,
+                });
             }
         }
 
-        private async Task UpdateAppointmentsAsync()
+        private async Task UpdateAppointmentsAsync(List<Appointment> appointments)
         {
             var homeAssistantAppointments = (await hassCalendarApi.GetAppointmentsAsync(FamilyCalendar, DateTime.Now.AddMinutes(-5), DateTime.Now.AddDays(30)))
                 .Select(a => Appointment.Create(a, FamilyCalendar)).ToList();
@@ -115,13 +101,17 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
                 {
                     appointments.Add(homeAssistantAppointment);
                 }
+                else
+                {
+                    appointment.Update(homeAssistantAppointment);
+                }
             }
 
             // Order by start time
             appointments = appointments.OrderBy(a => a.Start).ToList();
         }
 
-        private async Task UpdateAppointmentCoordinatesAndTravelTimesAsync()
+        private async Task UpdateAppointmentCoordinatesAndTravelTimesAsync(List<Appointment> appointments)
         {
             // We only update one appointment per cycle to limit the rate of calls to Waze
             var nextAppointmentToUpdate = appointments.FirstOrDefault(a => a.NeedsLocationCoordinates);
@@ -153,7 +143,7 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
             }
         }
 
-        private void SendAppointmentReminders()
+        private void SendAppointmentReminders(List<Appointment> appointments)
         {
             // We only do one reminder at a time
             var nextAppointmentToRemind = appointments.FirstOrDefault(a => a.ReminderIsDue);
@@ -161,14 +151,10 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
             {
                 if (!SkipNotifyFor(nextAppointmentToRemind))
                 {
-#pragma warning disable CA5394 // Do not use insecure randomness
-                    var reminderNotice = reminderNotices[new Random().Next(reminderNotices.Count)];
-#pragma warning restore CA5394 // Do not use insecure randomness
-
                     services.Notify.AlexaMediaDevicesInside(new NotifyAlexaMediaDevicesInsideParameters
                     {
                         Data = new { type = "announce" },
-                        Message = $"{reminderNotice} {nextAppointmentToRemind.ReminderMessage}",
+                        Message = nextAppointmentToRemind.ReminderMessage,
                     });
                 }
 

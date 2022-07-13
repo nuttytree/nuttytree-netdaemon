@@ -14,6 +14,8 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
 
         public string? Summary { get; set; }
 
+        public string? Description { get; set; }
+
         public string? Location { get; set; }
 
         public DateTime Start { get; set; }
@@ -77,16 +79,25 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
         {
             get
             {
-                var homeOrLeaveMessage = IsAtHome ? $"you have {Summary}" : $"you need to leave for {Summary}";
-                return NextReminder switch
-                {
-                    ReminderType.TwoHours => $"{homeOrLeaveMessage} in {(IsAtHome ? null : "approximately")} 2 hours",
-                    ReminderType.OneHour => $"{homeOrLeaveMessage} in {(IsAtHome ? null : "approximately")} 1 hour",
-                    ReminderType.ThirtyMinutes => $"{homeOrLeaveMessage} in {(IsAtHome ? null : "approximately")} 30 minutes",
-                    ReminderType.FifteenMinutes => $"{homeOrLeaveMessage} in {(IsAtHome ? null : "approximately")} 15 minutes",
-                    ReminderType.Now => $"{homeOrLeaveMessage} right now",
-                    _ => string.Empty,
-                };
+#pragma warning disable CA5394 // Do not use insecure randomness
+#pragma warning disable SA1118 // Parameter should not span multiple lines
+                return string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{1} you {2} {3} {4}",
+                    ReminderPrefixes[new Random().Next(ReminderPrefixes.Count)],
+                    IsAtHome ? "have" : "need to leave for",
+                    Summary,
+                    NextReminder switch
+                    {
+                        ReminderType.TwoHours => $"in {(IsAtHome ? null : "approximately")} 2 hours",
+                        ReminderType.OneHour => $"in {(IsAtHome ? null : "approximately")} 1 hour",
+                        ReminderType.ThirtyMinutes => $"in {(IsAtHome ? null : "approximately")} 30 minutes",
+                        ReminderType.FifteenMinutes => $"in {(IsAtHome ? null : "approximately")} 15 minutes",
+                        ReminderType.Now => $"right now",
+                        _ => string.Empty,
+                    });
+#pragma warning restore SA1118 // Parameter should not span multiple lines
+#pragma warning restore CA5394 // Do not use insecure randomness
             }
         }
 
@@ -96,6 +107,7 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
             {
                 Id = GenerateId(hassAppointment),
                 Summary = hassAppointment.Summary,
+                Description = hassAppointment.Description,
                 Location = hassAppointment.Location,
                 Start = hassAppointment.Start?.DateTime ?? hassAppointment.Start?.Date ?? DateTime.MinValue,
                 End = hassAppointment.End?.DateTime ?? hassAppointment.End?.Date,
@@ -107,6 +119,11 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
             appointment.CheckForKnownLocationCoordinates();
 
             return appointment;
+        }
+
+        public void Update(Appointment hassAppointment)
+        {
+            Description = hassAppointment.Description;
         }
 
         public void SetTravelTime(TravelTime? travelTime)
