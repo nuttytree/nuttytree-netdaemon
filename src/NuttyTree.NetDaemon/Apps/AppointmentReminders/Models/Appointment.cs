@@ -83,7 +83,7 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders.Models
 #pragma warning disable SA1118 // Parameter should not span multiple lines
                 return string.Format(
                     CultureInfo.InvariantCulture,
-                    "{1} you {2} {3} {4}",
+                    "{0} you {1} {2} {3}",
                     ReminderPrefixes[new Random().Next(ReminderPrefixes.Count)],
                     IsAtHome ? "have" : "need to leave for",
                     Summary,
