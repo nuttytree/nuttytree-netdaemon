@@ -27,7 +27,8 @@ try
                 .AddAppointmentRemindersApp();
 
             services
-                .AddWaze();
+                .AddWaze()
+                .AddRandomWords();
         })
         .Build()
         .RunAsync()
