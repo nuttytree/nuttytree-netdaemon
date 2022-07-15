@@ -1,8 +1,8 @@
 ﻿using System.IO.Abstractions;
+using System.Reactive.Concurrency;
 using System.Text.Json;
 using HomeAssistantGenerated;
 using Microsoft.Extensions.Configuration;
-using NetDaemon.Extensions.Scheduler;
 using NuttyTree.NetDaemon.Apps.AppointmentReminders.HomeAssistant;
 using NuttyTree.NetDaemon.Apps.AppointmentReminders.Models;
 using NuttyTree.NetDaemon.Waze;
@@ -12,7 +12,7 @@ using static NuttyTree.NetDaemon.Apps.AppointmentReminders.AppointmentConstants;
 namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
 {
     [NetDaemonApp]
-    internal class AppointmentRemindersApp
+    internal class AppointmentRemindersApp : IAsyncInitializable
     {
         private readonly IFileSystem fileSystem;
 
@@ -24,21 +24,26 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
 
         private readonly IServices services;
 
+        private readonly IScheduler scheduler;
+
         private readonly ILogger<AppointmentRemindersApp> logger;
 
         private readonly string dataFile;
 
+        private List<Appointment> appointments = new List<Appointment>();
+
         public AppointmentRemindersApp(
-            IConfiguration configuration,
             IFileSystem fileSystem,
+            IScheduler scheduler,
             IHomeAssistantCalendarApi hassCalendarApi,
             IWazeTravelTimes wazeTravelTimes,
             IEntities entities,
             IServices services,
-            INetDaemonScheduler scheduler,
-            ILogger<AppointmentRemindersApp> logger)
+            ILogger<AppointmentRemindersApp> logger,
+            IConfiguration configuration)
         {
             this.fileSystem = fileSystem;
+            this.scheduler = scheduler;
             this.hassCalendarApi = hassCalendarApi;
             this.wazeTravelTimes = wazeTravelTimes;
             this.entities = entities;
@@ -48,25 +53,31 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
             var dataFolder = fileSystem.Path.GetFullPath(configuration.GetValue<string>("DataFolder"));
             fileSystem.Directory.CreateDirectory(dataFolder);
             dataFile = fileSystem.Path.GetFullPath("appointments.json", dataFolder);
+        }
 
-#pragma warning disable VSTHRD101 // Avoid unsupported async delegates
-            scheduler.RunEvery(TimeSpan.FromMinutes(1), DateTimeOffset.UtcNow, async () => await UpdateAppointmentsAndSendRemindersAsync());
-#pragma warning restore VSTHRD101 // Avoid unsupported async delegates
+        public async Task InitializeAsync(CancellationToken cancellationToken)
+        {
+            await UpdateAppointmentsAndSendRemindersAsync();
+
+            Observable.Interval(TimeSpan.FromMinutes(1), scheduler)
+                .Select(_ => Observable.FromAsync(async () => await UpdateAppointmentsAndSendRemindersAsync()))
+                .Concat()
+                .Subscribe();
         }
 
         private async Task UpdateAppointmentsAndSendRemindersAsync()
         {
             try
             {
-                var appointments = fileSystem.File.Exists(dataFile)
+                appointments = fileSystem.File.Exists(dataFile)
                     ? JsonSerializer.Deserialize<List<Appointment>>(await fileSystem.File.ReadAllTextAsync(dataFile)) ?? new List<Appointment>()
                     : new List<Appointment>();
 
-                await UpdateAppointmentsAsync(appointments);
+                await UpdateAppointmentsAsync();
 
-                await UpdateAppointmentCoordinatesAndTravelTimesAsync(appointments);
+                await UpdateAppointmentCoordinatesAndTravelTimesAsync();
 
-                SendAppointmentReminders(appointments);
+                SendAppointmentReminders();
 
                 await fileSystem.File.WriteAllTextAsync(dataFile, JsonSerializer.Serialize(appointments, new JsonSerializerOptions { WriteIndented = true }));
             }
@@ -81,7 +92,7 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
             }
         }
 
-        private async Task UpdateAppointmentsAsync(List<Appointment> appointments)
+        private async Task UpdateAppointmentsAsync()
         {
             var homeAssistantAppointments = (await hassCalendarApi.GetAppointmentsAsync(FamilyCalendar, DateTime.Now.AddMinutes(-5), DateTime.Now.AddDays(30)))
                 .Select(a => Appointment.Create(a, FamilyCalendar)).ToList();
@@ -111,7 +122,7 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
             appointments = appointments.OrderBy(a => a.Start).ToList();
         }
 
-        private async Task UpdateAppointmentCoordinatesAndTravelTimesAsync(List<Appointment> appointments)
+        private async Task UpdateAppointmentCoordinatesAndTravelTimesAsync()
         {
             // We only update one appointment per cycle to limit the rate of calls to Waze
             var nextAppointmentToUpdate = appointments.FirstOrDefault(a => a.NeedsLocationCoordinates);
@@ -143,7 +154,7 @@ namespace NuttyTree.NetDaemon.Apps.AppointmentReminders
             }
         }
 
-        private void SendAppointmentReminders(List<Appointment> appointments)
+        private void SendAppointmentReminders()
         {
             // We only do one reminder at a time
             var nextAppointmentToRemind = appointments.FirstOrDefault(a => a.ReminderIsDue);
