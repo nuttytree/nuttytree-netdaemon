@@ -1,7 +1,7 @@
-﻿using NuttyTree.NetDaemon.ExternalServices.RandomWords;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Refit;
 
-namespace Microsoft.Extensions.DependencyInjection
+namespace NuttyTree.NetDaemon.ExternalServices.RandomWords
 {
     public static class IServiceColectionExtensions
     {
