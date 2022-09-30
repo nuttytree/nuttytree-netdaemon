@@ -361,7 +361,7 @@ MigrationBackup/
 .gradle/
 .idea/
 
+# Local only files
 appsettings.Development.json
 data/*
 /src/NuttyTree.NetDaemon.Infrastructure/HomeAssistant/EntitiesAndServices.cs
-/src/NuttyTree.NetDaemon.Infrastructure/.config/dotnet-tools.json
