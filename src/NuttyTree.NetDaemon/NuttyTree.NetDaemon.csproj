@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -9,25 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentDateTime" Version="2.1.0" />
-    <PackageReference Include="JoySoftware.NetDaemon.AppModel" Version="22.27.2" />
-    <PackageReference Include="JoySoftware.NetDaemon.Runtime" Version="22.27.2" />
-    <PackageReference Include="JoySoftware.NetDaemon.HassModel" Version="22.27.2" />
-    <PackageReference Include="JoySoftware.NetDaemon.Client" Version="22.27.2" />
-    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Scheduling" Version="22.27.2" />
-    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Logging" Version="22.27.2" />
-    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Tts" Version="22.27.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
-    <PackageReference Include="Net.Codecrete.QrCodeGenerator" Version="2.0.3" />
-    <PackageReference Include="Serilog.AspNetCore" Version="5.0.0" />
-    <PackageReference Include="System.IO.Abstractions" Version="17.0.21" />
-    <PackageReference Include="System.Reactive" Version="5.0.0" />
-    <PackageReference Include="YamlDotNet" Version="11.2.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NuttyTree.NetDaemon.Application\NuttyTree.NetDaemon.Application.csproj" />
     <ProjectReference Include="..\NuttyTree.NetDaemon.ExternalServices\NuttyTree.NetDaemon.ExternalServices.csproj" />
-    <ProjectReference Include="..\NuttyTree.NetDaemon.Waze\NuttyTree.NetDaemon.Waze.csproj" />
+    <ProjectReference Include="..\NuttyTree.NetDaemon.Infrastructure\NuttyTree.NetDaemon.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="Microsoft.VisualStudio.Threading.Analyzers" Version="17.2.32">
+    <PackageReference Update="Microsoft.VisualStudio.Threading.Analyzers" Version="17.3.44">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
