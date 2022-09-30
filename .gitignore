@@ -363,3 +363,4 @@ MigrationBackup/
 
 appsettings.Development.json
 data/*
+/src/NuttyTree.NetDaemon.Infrastructure/HomeAssistant/EntitiesAndServices.cs
