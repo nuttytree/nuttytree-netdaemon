@@ -1,5 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS builder
 
+ENV PATH="/root/.dotnet/tools:${PATH}"
+
 COPY . /app
 
 WORKDIR /app
