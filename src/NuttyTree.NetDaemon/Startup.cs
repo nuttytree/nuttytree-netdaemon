@@ -1,7 +1,7 @@
-﻿using HomeAssistantGenerated;
-using NetDaemon.Extensions.Scheduler;
+﻿using NetDaemon.Extensions.Scheduler;
 using NetDaemon.Runtime;
 using NuttyTree.NetDaemon.Application;
+using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 
 namespace NuttyTree.NetDaemon;
 

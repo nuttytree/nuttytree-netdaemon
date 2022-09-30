@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -13,5 +13,21 @@
     <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="HomeAssistant\" />
+  </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PrepareForBuild">
+    <Exec Command="dotnet tool update JoySoftware.NetDaemon.HassModel.CodeGen -g" IgnoreExitCode="true" />
+    <Exec Command="nd-codegen -o ..\NuttyTree.NetDaemon.Infrastructure\HomeAssistant\EntitiesAndServices.cs -ns NuttyTree.NetDaemon.Infrastructure.HomeAssistant" WorkingDirectory="..\NuttyTree.NetDaemon" />
+
+    <ReadLinesFromFile File="HomeAssistant\EntitiesAndServices.cs">
+      <Output TaskParameter="Lines" ItemName="EntitiesAndServices"/>
+    </ReadLinesFromFile>
+    <WriteLinesToFile File="HomeAssistant\EntitiesAndServices.cs" Lines="// &lt;auto-generated&gt;" Overwrite="true"/>
+    <WriteLinesToFile File="HomeAssistant\EntitiesAndServices.cs" Lines="#nullable enable" Overwrite="false"/>
+    <WriteLinesToFile File="HomeAssistant\EntitiesAndServices.cs" Lines="@(EntitiesAndServices)" Overwrite="false"/>
+  </Target>
 
 </Project>

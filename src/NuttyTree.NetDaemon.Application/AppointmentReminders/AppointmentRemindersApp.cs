@@ -2,13 +2,13 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text.Json;
-using HomeAssistantGenerated;
 using Microsoft.Extensions.Configuration;
 using NetDaemon.AppModel;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.HomeAssistant;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.Models;
 using NuttyTree.NetDaemon.ExternalServices.Waze;
 using NuttyTree.NetDaemon.ExternalServices.Waze.Models;
+using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentConstants;
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders;
