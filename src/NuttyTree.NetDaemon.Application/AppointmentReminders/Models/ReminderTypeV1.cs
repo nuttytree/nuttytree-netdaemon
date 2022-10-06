@@ -1,6 +1,6 @@
 ﻿namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Models
 {
-    public enum ReminderType
+    public enum ReminderTypeV1
     {
         Now = 0,
         FifteenMinutes = 15,

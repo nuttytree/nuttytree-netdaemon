@@ -35,7 +35,7 @@ namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Models
 
         public DateTime LastTravelTimeUpdate { get; set; }
 
-        public ReminderType? NextReminder { get; set; }
+        public ReminderTypeV1? NextReminder { get; set; }
 
         public bool Ignore { get; set; }
 
@@ -88,11 +88,11 @@ namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Models
                     Summary,
                     NextReminder switch
                     {
-                        ReminderType.TwoHours => $"in {(IsAtHome ? null : "approximately")} 2 hours",
-                        ReminderType.OneHour => $"in {(IsAtHome ? null : "approximately")} 1 hour",
-                        ReminderType.ThirtyMinutes => $"in {(IsAtHome ? null : "approximately")} 30 minutes",
-                        ReminderType.FifteenMinutes => $"in {(IsAtHome ? null : "approximately")} 15 minutes",
-                        ReminderType.Now => $"right now",
+                        ReminderTypeV1.TwoHours => $"in {(IsAtHome ? null : "approximately")} 2 hours",
+                        ReminderTypeV1.OneHour => $"in {(IsAtHome ? null : "approximately")} 1 hour",
+                        ReminderTypeV1.ThirtyMinutes => $"in {(IsAtHome ? null : "approximately")} 30 minutes",
+                        ReminderTypeV1.FifteenMinutes => $"in {(IsAtHome ? null : "approximately")} 15 minutes",
+                        ReminderTypeV1.Now => $"right now",
                         _ => string.Empty,
                     });
 #pragma warning restore SA1118 // Parameter should not span multiple lines
@@ -133,25 +133,25 @@ namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Models
                 TravelMinutes = travelTime.Minutes;
                 if (LastTravelTimeUpdate == DateTime.MinValue)
                 {
-                    if (MinutesTillLeaveTime > (int)ReminderType.TwoHours)
+                    if (MinutesTillLeaveTime > (int)ReminderTypeV1.TwoHours)
                     {
-                        NextReminder = ReminderType.TwoHours;
+                        NextReminder = ReminderTypeV1.TwoHours;
                     }
-                    else if (MinutesTillLeaveTime > (int)ReminderType.OneHour)
+                    else if (MinutesTillLeaveTime > (int)ReminderTypeV1.OneHour)
                     {
-                        NextReminder = ReminderType.OneHour;
+                        NextReminder = ReminderTypeV1.OneHour;
                     }
-                    else if (MinutesTillLeaveTime > (int)ReminderType.ThirtyMinutes)
+                    else if (MinutesTillLeaveTime > (int)ReminderTypeV1.ThirtyMinutes)
                     {
-                        NextReminder = ReminderType.ThirtyMinutes;
+                        NextReminder = ReminderTypeV1.ThirtyMinutes;
                     }
-                    else if (MinutesTillLeaveTime > (int)ReminderType.FifteenMinutes)
+                    else if (MinutesTillLeaveTime > (int)ReminderTypeV1.FifteenMinutes)
                     {
-                        NextReminder = ReminderType.FifteenMinutes;
+                        NextReminder = ReminderTypeV1.FifteenMinutes;
                     }
-                    else if (MinutesTillLeaveTime > (int)ReminderType.Now)
+                    else if (MinutesTillLeaveTime > (int)ReminderTypeV1.Now)
                     {
-                        NextReminder = ReminderType.Now;
+                        NextReminder = ReminderTypeV1.Now;
                     }
                 }
             }

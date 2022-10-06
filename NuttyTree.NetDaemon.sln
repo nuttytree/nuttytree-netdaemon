@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuttyTree.NetDaemon.Tests", "tests\NuttyTree.NetDaemon.Tests\NuttyTree.NetDaemon.Tests.csproj", "{E279326D-AFA5-4304-8681-A908AACEA4C5}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuttyTree.NetDaemon", "src\NuttyTree.NetDaemon\NuttyTree.NetDaemon.csproj", "{C2025AB6-AF06-460A-9081-A798BCD36F19}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{1E435BC4-B53F-4707-AADF-8D4DFDB2D1E9}"
@@ -16,9 +14,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{08A2828C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuttyTree.NetDaemon.ExternalServices", "src\NuttyTree.NetDaemon.ExternalServices\NuttyTree.NetDaemon.ExternalServices.csproj", "{47B3C9D7-2715-4CFF-A529-55EB3B16DF7D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuttyTree.NetDaemon.Infrastructure", "src\NuttyTree.NetDaemon.Infrastructure\NuttyTree.NetDaemon.Infrastructure.csproj", "{741729EE-C590-4F6D-96EF-0B6CB39F2C28}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuttyTree.NetDaemon.Infrastructure", "src\NuttyTree.NetDaemon.Infrastructure\NuttyTree.NetDaemon.Infrastructure.csproj", "{741729EE-C590-4F6D-96EF-0B6CB39F2C28}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuttyTree.NetDaemon.Application", "src\NuttyTree.NetDaemon.Application\NuttyTree.NetDaemon.Application.csproj", "{B143BED0-0F18-4357-804D-0BCFAA098587}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuttyTree.NetDaemon.Application", "src\NuttyTree.NetDaemon.Application\NuttyTree.NetDaemon.Application.csproj", "{B143BED0-0F18-4357-804D-0BCFAA098587}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuttyTree.NetDaemon.Application.UnitTests", "tests\NuttyTree.NetDaemon.Application.UnitTests\NuttyTree.NetDaemon.Application.UnitTests.csproj", "{0E474832-416B-4AE8-84F0-C2535E01C731}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,18 +30,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E279326D-AFA5-4304-8681-A908AACEA4C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E279326D-AFA5-4304-8681-A908AACEA4C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E279326D-AFA5-4304-8681-A908AACEA4C5}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{E279326D-AFA5-4304-8681-A908AACEA4C5}.Debug|x64.Build.0 = Debug|Any CPU
-		{E279326D-AFA5-4304-8681-A908AACEA4C5}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{E279326D-AFA5-4304-8681-A908AACEA4C5}.Debug|x86.Build.0 = Debug|Any CPU
-		{E279326D-AFA5-4304-8681-A908AACEA4C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E279326D-AFA5-4304-8681-A908AACEA4C5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E279326D-AFA5-4304-8681-A908AACEA4C5}.Release|x64.ActiveCfg = Release|Any CPU
-		{E279326D-AFA5-4304-8681-A908AACEA4C5}.Release|x64.Build.0 = Release|Any CPU
-		{E279326D-AFA5-4304-8681-A908AACEA4C5}.Release|x86.ActiveCfg = Release|Any CPU
-		{E279326D-AFA5-4304-8681-A908AACEA4C5}.Release|x86.Build.0 = Release|Any CPU
 		{C2025AB6-AF06-460A-9081-A798BCD36F19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C2025AB6-AF06-460A-9081-A798BCD36F19}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C2025AB6-AF06-460A-9081-A798BCD36F19}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -90,12 +78,24 @@ Global
 		{B143BED0-0F18-4357-804D-0BCFAA098587}.Release|x64.Build.0 = Release|Any CPU
 		{B143BED0-0F18-4357-804D-0BCFAA098587}.Release|x86.ActiveCfg = Release|Any CPU
 		{B143BED0-0F18-4357-804D-0BCFAA098587}.Release|x86.Build.0 = Release|Any CPU
+		{0E474832-416B-4AE8-84F0-C2535E01C731}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E474832-416B-4AE8-84F0-C2535E01C731}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E474832-416B-4AE8-84F0-C2535E01C731}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0E474832-416B-4AE8-84F0-C2535E01C731}.Debug|x64.Build.0 = Debug|Any CPU
+		{0E474832-416B-4AE8-84F0-C2535E01C731}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0E474832-416B-4AE8-84F0-C2535E01C731}.Debug|x86.Build.0 = Debug|Any CPU
+		{0E474832-416B-4AE8-84F0-C2535E01C731}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E474832-416B-4AE8-84F0-C2535E01C731}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E474832-416B-4AE8-84F0-C2535E01C731}.Release|x64.ActiveCfg = Release|Any CPU
+		{0E474832-416B-4AE8-84F0-C2535E01C731}.Release|x64.Build.0 = Release|Any CPU
+		{0E474832-416B-4AE8-84F0-C2535E01C731}.Release|x86.ActiveCfg = Release|Any CPU
+		{0E474832-416B-4AE8-84F0-C2535E01C731}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{E279326D-AFA5-4304-8681-A908AACEA4C5} = {1E435BC4-B53F-4707-AADF-8D4DFDB2D1E9}
+		{0E474832-416B-4AE8-84F0-C2535E01C731} = {1E435BC4-B53F-4707-AADF-8D4DFDB2D1E9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9434E1A6-7C71-46DF-A1E2-A23F2F6CB3BF}

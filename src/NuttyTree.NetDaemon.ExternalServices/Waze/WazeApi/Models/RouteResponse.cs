@@ -1,11 +1,10 @@
-﻿namespace NuttyTree.NetDaemon.ExternalServices.Waze.WazeApi.Models
+﻿namespace NuttyTree.NetDaemon.ExternalServices.Waze.WazeApi.Models;
+
+internal class RouteResponse
 {
-    internal class RouteResponse
-    {
-        public Route? Response { get; set; }
+    public Route? Response { get; set; }
 
-        public object? Coords { get; set; }
+    public object? Coords { get; set; }
 
-        public object? SegCoords { get; set; }
-    }
+    public object? SegCoords { get; set; }
 }

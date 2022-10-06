@@ -4,6 +4,7 @@ using System.Reactive.Linq;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using NetDaemon.AppModel;
+using NuttyTree.NetDaemon.Application.Announcements;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.HomeAssistant;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.Models;
 using NuttyTree.NetDaemon.ExternalServices.Waze;
@@ -28,7 +29,11 @@ internal class AppointmentRemindersApp : IAsyncInitializable
 
     private readonly IScheduler scheduler;
 
+    private readonly IAnnouncementsService announcementsService;
+
     private readonly ILogger<AppointmentRemindersApp> logger;
+
+    private readonly bool disable;
 
     private readonly string dataFile;
 
@@ -41,6 +46,7 @@ internal class AppointmentRemindersApp : IAsyncInitializable
         IWazeTravelTimes wazeTravelTimes,
         IEntities entities,
         IServices services,
+        IAnnouncementsService announcementsService,
         ILogger<AppointmentRemindersApp> logger,
         IConfiguration configuration)
     {
@@ -50,21 +56,24 @@ internal class AppointmentRemindersApp : IAsyncInitializable
         this.wazeTravelTimes = wazeTravelTimes;
         this.entities = entities;
         this.services = services;
+        this.announcementsService = announcementsService;
         this.logger = logger;
+
+        disable = configuration.GetValue<bool>("DisableAnnouncements");
 
         var dataFolder = fileSystem.Path.GetFullPath(configuration.GetValue<string>("DataFolder"));
         fileSystem.Directory.CreateDirectory(dataFolder);
         dataFile = fileSystem.Path.GetFullPath("appointments.json", dataFolder);
     }
 
-    public async Task InitializeAsync(CancellationToken cancellationToken)
+    public Task InitializeAsync(CancellationToken cancellationToken)
     {
-        await UpdateAppointmentsAndSendRemindersAsync();
-
         Observable.Interval(TimeSpan.FromMinutes(1), scheduler)
             .Select(_ => Observable.FromAsync(async () => await UpdateAppointmentsAndSendRemindersAsync()))
             .Concat()
             .Subscribe();
+
+        return Task.CompletedTask;
     }
 
     private async Task UpdateAppointmentsAndSendRemindersAsync()
@@ -164,19 +173,15 @@ internal class AppointmentRemindersApp : IAsyncInitializable
         {
             if (!SkipNotifyFor(nextAppointmentToRemind))
             {
-                services.Notify.AlexaMediaDevicesInside(new NotifyAlexaMediaDevicesInsideParameters
-                {
-                    Data = new { type = "announce" },
-                    Message = nextAppointmentToRemind.ReminderMessage,
-                });
+                announcementsService.SendAnnouncement(nextAppointmentToRemind.ReminderMessage, person: nextAppointmentToRemind.Calendar == ScoutsCalendar ? Mayson : null);
             }
 
             nextAppointmentToRemind.NextReminder = nextAppointmentToRemind.NextReminder switch
             {
-                ReminderType.TwoHours => ReminderType.OneHour,
-                ReminderType.OneHour => ReminderType.ThirtyMinutes,
-                ReminderType.ThirtyMinutes => ReminderType.FifteenMinutes,
-                ReminderType.FifteenMinutes => ReminderType.Now,
+                ReminderTypeV1.TwoHours => ReminderTypeV1.OneHour,
+                ReminderTypeV1.OneHour => ReminderTypeV1.ThirtyMinutes,
+                ReminderTypeV1.ThirtyMinutes => ReminderTypeV1.FifteenMinutes,
+                ReminderTypeV1.FifteenMinutes => ReminderTypeV1.Now,
                 _ => null,
             };
         }
@@ -184,7 +189,11 @@ internal class AppointmentRemindersApp : IAsyncInitializable
 
     private bool SkipNotifyFor(Appointment appointment)
     {
-        if (appointment.NextReminder == ReminderType.TwoHours && string.Equals(entities.BinarySensor.MelissaIsInBed.State, "on", StringComparison.OrdinalIgnoreCase))
+        if (disable)
+        {
+            return true;
+        }
+        else if (appointment.NextReminder == ReminderTypeV1.TwoHours && string.Equals(entities.BinarySensor.MelissaIsInBed.State, "on", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
