@@ -10,6 +10,7 @@ namespace NuttyTree.NetDaemon.ExternalServices.Waze
         public static IServiceCollection AddWaze(this IServiceCollection services)
         {
             services.AddRefitClient<IWazeApi>()
+                .AddDefaultRetryPolicy()
                 .ConfigureHttpClient(client =>
                 {
                     client.BaseAddress = new Uri("https://www.waze.com");

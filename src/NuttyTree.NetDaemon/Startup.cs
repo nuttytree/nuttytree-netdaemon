@@ -1,7 +1,6 @@
 ﻿using NetDaemon.Extensions.Scheduler;
 using NetDaemon.Runtime;
 using NuttyTree.NetDaemon.Application;
-using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 
 namespace NuttyTree.NetDaemon;
 
@@ -19,9 +18,7 @@ public class Startup
         services
             .ConfigureNetDaemonServices(Configuration)
             .AddNetDaemonStateManager()
-            .AddNetDaemonScheduler()
-            .AddScoped<IEntities, Entities>()
-            .AddScoped<IServices, Services>();
+            .AddNetDaemonScheduler();
 
         services.AddApplication();
 
