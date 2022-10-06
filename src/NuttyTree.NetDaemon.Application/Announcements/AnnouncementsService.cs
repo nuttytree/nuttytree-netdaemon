@@ -29,7 +29,7 @@ internal class AnnouncementsService : IAnnouncementsService, IDisposable
 
     private CancellationTokenSource? delayedAnnouncementDue;
 
-    private DateTime? noAnnouncementsUntil;
+    private DateTime? disabledUntil;
 
     private CancellationTokenSource? releaseRateLimiter;
 
@@ -75,21 +75,25 @@ internal class AnnouncementsService : IAnnouncementsService, IDisposable
         if (minutes > 0)
         {
             delayedAnnouncementDue?.Dispose();
-            noAnnouncementsUntil = minutes == int.MaxValue ? DateTime.UtcNow.AddMilliseconds(int.MaxValue) : DateTime.UtcNow.AddMinutes(minutes);
-            delayedAnnouncementDue = new CancellationTokenSource(noAnnouncementsUntil.Value.Subtract(DateTime.UtcNow));
+            disabledUntil = minutes == int.MaxValue ? DateTime.UtcNow.AddMilliseconds(int.MaxValue) : DateTime.UtcNow.AddMinutes(minutes);
+            delayedAnnouncementDue = new CancellationTokenSource(disabledUntil.Value.Subtract(DateTime.UtcNow));
             delayedAnnouncementDue.Token.Register(() =>
             {
-                noAnnouncementsUntil = null;
+                disabledUntil = null;
                 nextAnnouncementAvailable.TrySetResult();
             });
+            logger.LogInformation("Announcements disabled until {DisabledUntil}", disabledUntil);
+            haContext.SetEntityState("binary_sensor.announcments_enabled", "off", new { until = $"{(minutes == int.MaxValue ? "Indefinitely" : disabledUntil)}" });
         }
     }
 
     public void EnableAnnouncements()
     {
         delayedAnnouncementDue?.Dispose();
-        noAnnouncementsUntil = null;
+        disabledUntil = null;
         nextAnnouncementAvailable.TrySetResult();
+        logger.LogInformation("Announcements enabled", disabledUntil);
+        haContext.SetEntityState("binary_sensor.announcments_enabled", "on", new { });
     }
 
     public void SendAnnouncement(
@@ -155,12 +159,12 @@ internal class AnnouncementsService : IAnnouncementsService, IDisposable
                     nextAnnouncementAvailable = new TaskCompletionSource();
 
                     var nextAnnouncement = announcements
-                        .Where(a => noAnnouncementsUntil == null || a.Priority != AnnouncementPriority.Warning)
+                        .Where(a => disabledUntil == null || a.Priority != AnnouncementPriority.Warning)
                         .OrderBy(a => a.QueuedAt)
                         .FirstOrDefault();
                     if (nextAnnouncement != null)
                     {
-                        if (noAnnouncementsUntil == null || nextAnnouncement.Priority == AnnouncementPriority.Critical)
+                        if (disabledUntil == null || nextAnnouncement.Priority == AnnouncementPriority.Critical)
                         {
                             if (nextAnnouncement.Person == null || haContext.Entity($"person.{nextAnnouncement.Person.ToLowerInvariant()}").State.CaseInsensitiveEquals("home"))
                             {
