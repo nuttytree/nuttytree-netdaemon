@@ -1,8 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NetDaemon.HassModel;
-using NetDaemon.HassModel.Entities;
-using NetDaemon.HassModel.Integration;
 using NuttyTree.NetDaemon.Application.Announcements.Models;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 
@@ -10,6 +7,25 @@ namespace NuttyTree.NetDaemon.Application.Announcements;
 
 internal class AnnouncementsService : IAnnouncementsService, IDisposable
 {
+    private static readonly List<string> InformationPrefixes = new List<string>
+    {
+        "Just a friendly reminder",
+        "Don't forget that",
+        "Remember that",
+    };
+
+    private static readonly List<string> WarningPrefixes = new List<string>
+    {
+        "Warning",
+        "Important reminder",
+    };
+
+    private static readonly List<string> CriticalPrefixes = new List<string>
+    {
+        "Alert",
+        "Critical notice"
+    };
+
     private readonly SynchronizedCollection<Announcement> announcements = new SynchronizedCollection<Announcement>();
 
     private readonly SemaphoreSlim rateLimiter = new SemaphoreSlim(1, 1);
@@ -169,10 +185,18 @@ internal class AnnouncementsService : IAnnouncementsService, IDisposable
                         {
                             if (nextAnnouncement.Person == null || haContext.Entity($"person.{nextAnnouncement.Person.ToLowerInvariant()}").State.CaseInsensitiveEquals("home"))
                             {
+                                var message = nextAnnouncement.Priority switch
+                                {
+                                    AnnouncementPriority.Information => InformationPrefixes.PickRandom(),
+                                    AnnouncementPriority.Warning => WarningPrefixes.PickRandom(),
+                                    AnnouncementPriority.Critical => CriticalPrefixes.PickRandom(),
+                                    _ => string.Empty,
+                                };
+                                message += $", {nextAnnouncement.Message}";
                                 homeAssistantServices.Notify.AlexaMediaDevicesInside(new NotifyAlexaMediaDevicesInsideParameters
                                 {
                                     Data = new { type = "announce" },
-                                    Message = nextAnnouncement.Message,
+                                    Message = message,
                                 });
                             }
                         }

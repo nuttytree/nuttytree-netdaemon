@@ -2,7 +2,6 @@
 using System.Security.Cryptography;
 using FluentDateTime;
 using Net.Codecrete.QrCodeGenerator;
-using NetDaemon.AppModel;
 using NetDaemon.Extensions.Scheduler;
 using NuttyTree.NetDaemon.ExternalServices.RandomWords;
 

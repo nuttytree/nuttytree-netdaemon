@@ -207,6 +207,6 @@ public class AnnouncementsService_Tests
 
     private void VerifyAnnouncementSent(Func<Times> times = null)
         => haContext.Verify(
-            x => x.CallService("notify", "alexa_media_devices_inside", null, It.Is<NotifyAlexaMediaDevicesInsideParameters>(p => p.Message == testMessage)),
+            x => x.CallService("notify", "alexa_media_devices_inside", null, It.Is<NotifyAlexaMediaDevicesInsideParameters>(p => p.Message.EndsWith($", {testMessage}"))),
             times ?? Times.Once);
 }

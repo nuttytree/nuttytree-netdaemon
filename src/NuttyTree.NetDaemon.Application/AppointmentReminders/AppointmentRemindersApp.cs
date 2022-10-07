@@ -3,7 +3,6 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
-using NetDaemon.AppModel;
 using NuttyTree.NetDaemon.Application.Announcements;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.HomeAssistant;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.Models;

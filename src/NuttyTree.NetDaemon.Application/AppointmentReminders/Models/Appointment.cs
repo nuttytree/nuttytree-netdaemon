@@ -78,12 +78,10 @@ namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Models
         {
             get
             {
-#pragma warning disable CA5394 // Do not use insecure randomness
 #pragma warning disable SA1118 // Parameter should not span multiple lines
                 return string.Format(
                     CultureInfo.InvariantCulture,
-                    "{0} you {1} {2} {3}",
-                    ReminderPrefixes[new Random().Next(ReminderPrefixes.Count)],
+                    "you {0} {1} {2}",
                     IsAtHome ? "have" : "need to leave for",
                     Summary,
                     NextReminder switch
@@ -96,7 +94,6 @@ namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Models
                         _ => string.Empty,
                     });
 #pragma warning restore SA1118 // Parameter should not span multiple lines
-#pragma warning restore CA5394 // Do not use insecure randomness
             }
         }
 
