@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NetDaemon.HassModel;
+using NetDaemon.HassModel.Entities;
 using NetDaemon.HassModel.Integration;
 using NuttyTree.NetDaemon.Application.Announcements.Models;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
