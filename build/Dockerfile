@@ -1,5 +1,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS builder
 
+ARG HOMEASSISTANT__HOST
+ARG HOMEASSISTANT__PORT
+ARG HOMEASSISTANT__SSL
+ARG HOMEASSISTANT__TOKEN
+
 ENV PATH="/root/.dotnet/tools:${PATH}"
 
 COPY . /app
