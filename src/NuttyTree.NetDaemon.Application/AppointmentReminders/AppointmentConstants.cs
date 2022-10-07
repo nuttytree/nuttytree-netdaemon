@@ -23,12 +23,5 @@ namespace NuttyTree.NetDaemon.Application.AppointmentReminders
         public static readonly LocationCoordinates RidgewoodChurchLocation = new LocationCoordinates { Latitude = 44.923126220703125, Longitude = -93.50469207763672 };
 
         public static readonly LocationCoordinates DefaultScoutsLocation = new LocationCoordinates { Latitude = 44.83056640625, Longitude = -93.43046569824219 };
-
-        public static readonly List<string> ReminderPrefixes = new List<string>
-        {
-            "Just a friendly reminder",
-            "Don't forget that",
-            "Remember that"
-        };
     }
 }

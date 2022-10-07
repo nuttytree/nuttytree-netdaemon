@@ -36,6 +36,10 @@
     <WriteLinesToFile File="HomeAssistant/EntitiesAndServices.cs" Lines="// &lt;auto-generated&gt;" Overwrite="true" />
     <WriteLinesToFile File="HomeAssistant/EntitiesAndServices.cs" Lines="#nullable enable" Overwrite="false" />
     <WriteLinesToFile File="HomeAssistant/EntitiesAndServices.cs" Lines="@(EntitiesAndServices)" Overwrite="false" />
+
+    <ItemGroup>
+      <Compile Include="HomeAssistant\EntitiesAndServices.cs" Exclude="@(Compile)" />
+    </ItemGroup>
   </Target>
 
 </Project>
