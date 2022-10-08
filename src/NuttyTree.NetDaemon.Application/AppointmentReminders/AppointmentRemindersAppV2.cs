@@ -1,12 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using NetDaemon.AppModel;
-using NetDaemon.HassModel;
-using NetDaemon.HassModel.Integration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using NuttyTree.NetDaemon.Application.Announcements;
 using NuttyTree.NetDaemon.Application.Announcements.Models;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.Extensions;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.Models;
+using NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
 using NuttyTree.NetDaemon.ExternalServices.HomeAssistantCalendar;
 using NuttyTree.NetDaemon.ExternalServices.Waze;
 using NuttyTree.NetDaemon.ExternalServices.Waze.Models;
@@ -18,10 +18,12 @@ using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentCon
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders;
 
-////[Focus]
-////[NetDaemonApp]
+[Focus]
+[NetDaemonApp]
 internal sealed class AppointmentRemindersAppV2 : IDisposable
 {
+    private readonly AppointmentRemindersOptions options;
+
     private readonly IPeriodicTaskScheduler taskScheduler;
 
     private readonly IServiceScopeFactory serviceScopeFactory;
@@ -34,6 +36,8 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
 
     private readonly IServices homeAssistantServices;
 
+    private readonly CancellationToken applicationStopping;
+
     private readonly ILogger<AppointmentRemindersAppV2> logger;
 
     private readonly List<IDisposable> periodicTasks = new List<IDisposable>();
@@ -41,6 +45,7 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
     private TaskCompletionSource<AppointmentRemindersServiceType> serviceTrigger = new TaskCompletionSource<AppointmentRemindersServiceType>();
 
     public AppointmentRemindersAppV2(
+        IOptions<AppointmentRemindersOptions> options,
         IPeriodicTaskScheduler taskScheduler,
         IServiceScopeFactory serviceScopeFactory,
         IHomeAssistantCalendarApi homeAssistantCalendar,
@@ -48,20 +53,24 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
         IAnnouncementsService announcementsService,
         IHaContext haContext,
         IServices homeAssistantServices,
+        IHostApplicationLifetime applicationLifetime,
         ILogger<AppointmentRemindersAppV2> logger)
     {
+        this.options = options.Value;
         this.taskScheduler = taskScheduler;
         this.serviceScopeFactory = serviceScopeFactory;
         this.homeAssistantCalendar = homeAssistantCalendar;
         this.wazeTravelTimes = wazeTravelTimes;
         this.announcementsService = announcementsService;
         this.homeAssistantServices = homeAssistantServices;
+        applicationStopping = applicationLifetime.ApplicationStopping;
         this.logger = logger;
 
-        periodicTasks.Add(taskScheduler.SchedulePeriodicTask(TimeSpan.FromSeconds(30), UpdateAppointmentsFromHomeAssistantAsync));
-        periodicTasks.Add(taskScheduler.SchedulePeriodicTask(TimeSpan.FromSeconds(10), SetAppointmentLocationCoordinatesAsync));
-        periodicTasks.Add(taskScheduler.SchedulePeriodicTask(TimeSpan.FromSeconds(10), CreateAppointmentRemindersAsync));
-        periodicTasks.Add(taskScheduler.SchedulePeriodicTask(TimeSpan.FromSeconds(10), UpdateAppointmentReminderTravelTimesAsync));
+        periodicTasks.Add(taskScheduler.SchedulePeriodicTask(TimeSpan.FromSeconds(options.Value.AppointmentUpdatesSchedulePeriod), UpdateAppointmentsFromHomeAssistantAsync));
+        periodicTasks.Add(taskScheduler.SchedulePeriodicTask(TimeSpan.FromSeconds(options.Value.CoordinateUpdatesSchedulePeriod), SetAppointmentLocationCoordinatesAsync));
+        periodicTasks.Add(taskScheduler.SchedulePeriodicTask(TimeSpan.FromSeconds(options.Value.CreateRemindersSchedulePeriod), CreateAppointmentRemindersAsync));
+        periodicTasks.Add(taskScheduler.SchedulePeriodicTask(TimeSpan.FromSeconds(options.Value.TravelTimeUpdatesSchedulePeriod), UpdateAppointmentReminderTravelTimesAsync));
+        periodicTasks.Add(taskScheduler.SchedulePeriodicTask(TimeSpan.FromSeconds(options.Value.AnnounceRemindersSchedulePeriod), AnnounceAppointmentRemindersAsync));
 
         _ = HandleServiceCallAsync();
         haContext.RegisterServiceCallBack<object>(
@@ -94,7 +103,15 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
                     .Where(a => !homeAssistantAppointments.Any(h => h.Id == a.Id)));
 
                 homeAssistantAppointments
-                    .ForEach(h => appointments.FirstOrDefault(a => a.HasChanged(h))?.Update(h));
+                    .ForEach(h =>
+                    {
+                        var appointment = appointments.FirstOrDefault(a => a.Id == h.Id);
+                        if (appointment?.HasChanged(h) == true)
+                        {
+                            appointment.Update(h);
+                            ApplyAppointmentPersonDefaults(appointment);
+                        }
+                    });
 
                 dbContext.Appointments
                     .AddRange(homeAssistantAppointments
@@ -117,10 +134,11 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
 
     private void ApplyAppointmentPersonDefaults(AppointmentEntity appointment)
     {
+        appointment.Person = (appointment.Calendar == FamilyCalendar ? appointment.GetOverrideValue(nameof(appointment.Person)) : null) ?? appointment.Person;
         appointment.Person ??= appointment.Calendar == ScoutsCalendar ? Mayson : null;
-        appointment.Person ??= appointment.Calendar == FamilyCalendar && appointment.Summary.Contains("chris'", StringComparison.OrdinalIgnoreCase) ? Chris : null;
-        appointment.Person ??= appointment.Calendar == FamilyCalendar && appointment.Summary.Contains("melissa's", StringComparison.OrdinalIgnoreCase) ? Melissa : null;
-        appointment.Person ??= appointment.Calendar == FamilyCalendar && appointment.Summary.Contains("mayson's", StringComparison.OrdinalIgnoreCase) ? Mayson : null;
+        appointment.Person ??= appointment.Calendar == FamilyCalendar && appointment.Summary.StartsWith("chris' ", StringComparison.OrdinalIgnoreCase) ? Chris : null;
+        appointment.Person ??= appointment.Calendar == FamilyCalendar && appointment.Summary.StartsWith("melissa's ", StringComparison.OrdinalIgnoreCase) ? Melissa : null;
+        appointment.Person ??= appointment.Calendar == FamilyCalendar && appointment.Summary.StartsWith("mayson's ", StringComparison.OrdinalIgnoreCase) ? Mayson : null;
     }
 
     private async Task SetAppointmentLocationCoordinatesAsync(CancellationToken cancellationToken)
@@ -214,14 +232,21 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
 
     private void ApplyAppointmentReminderDefaults(AppointmentEntity appointment)
     {
+        if (appointment.Calendar == ScoutsCalendar && appointment.Summary.Contains("cancel", StringComparison.OrdinalIgnoreCase))
+        {
+            appointment.GetStartReminder().NextAnnouncementType = NextAnnouncementType.None;
+            appointment.GetEndReminder().NextAnnouncementType = NextAnnouncementType.None;
+        }
+
         if (appointment.Person == Mayson)
         {
             // We are going to work on reducing announcements before we introduce more announcements
-            // appointment.GetEndReminder().NextAnnouncementType = NextAnnouncementType.FifteenMinutes;
+            // appointment.GetEndReminder().NextAnnouncementType ??= NextAnnouncementType.FifteenMinutes;
         }
 
         appointment.GetStartReminder().NextAnnouncementType ??= NextAnnouncementType.TwoHours;
         appointment.GetEndReminder().NextAnnouncementType ??= NextAnnouncementType.None;
+        appointment.Reminders.ForEach(r => r.ArriveLeadMinutes ??= options.DefaultArriveLeadMinutes);
         appointment.Reminders.ForEach(r => r.NextTravelTimeUpdate = r.NextAnnouncementType == NextAnnouncementType.None ? null : DateTime.MinValue);
     }
 
@@ -235,14 +260,22 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
             var dbContext = scope.ServiceProvider.GetRequiredService<NuttyDbContext>();
             var reminders = await dbContext.AppointmentReminders
                 .Where(r => r.NextTravelTimeUpdate <= DateTime.UtcNow)
-                .OrderBy(r => r.Appointment.StartDateTime)
+                .OrderBy(r => r.NextAnnouncement)
                 .Include(r => r.Appointment)
                 .ToListAsync(cancellationToken);
 
             foreach (var reminder in reminders)
             {
                 var travelTime = await wazeTravelTimes.GetTravelTimeAsync(HomeLocation, reminder.GetLocationCoordinates(), reminder.GetArriveDateTime());
-                reminder.SetTravelTime(travelTime);
+
+                // If a Scouts appointment is more than 25 miles away it is pretty sure bet we are meeting at the Church so update the location and re-calculate the travel time
+                if (reminder.Appointment.Calendar == ScoutsCalendar && travelTime?.Miles > 25)
+                {
+                    reminder.Appointment.SetLocationCoordinates(DefaultScoutsLocation);
+                    travelTime = await wazeTravelTimes.GetTravelTimeAsync(HomeLocation, DefaultScoutsLocation, reminder.GetArriveDateTime());
+                }
+
+                reminder.SetTravelTime(travelTime, options.MaxReminderMiles);
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
         }
@@ -254,19 +287,55 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
 
     private async Task AnnounceAppointmentRemindersAsync(CancellationToken cancellationToken)
     {
-        await announcementsService.SendAnnouncementAsync("test message", AnnouncementPriority.Warning, cancellationToken: cancellationToken);
+        try
+        {
+            logger.LogInformation("Announcing appointment reminders");
+
+            using var scope = serviceScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<NuttyDbContext>();
+            var reminder = await dbContext.AppointmentReminders
+                .Where(r => r.NextAnnouncement <= DateTime.UtcNow)
+                .OrderBy(r => r.NextAnnouncement)
+                .Include(r => r.Appointment)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (reminder != null)
+            {
+                if (reminder.NextAnnouncement > DateTime.UtcNow.AddMinutes(-5))
+                {
+                    ////await announcementsService.SendAnnouncementAsync(
+                    ////    reminder.GetReminderMessage(),
+                    ////    AnnouncementPriority.Information,
+                    ////    reminder.Type == ReminderType.Start ? reminder.Appointment.Person : null,
+                    ////    cancellationToken);
+
+                    homeAssistantServices.Notify.MobileAppPhoneChris(new NotifyMobileAppPhoneChrisParameters
+                    {
+                        Title = $"Test Appointment Reminder For: {(reminder.Type == ReminderType.Start ? reminder.Appointment.Person : null) ?? "Everyone"}",
+                        Message = reminder.GetReminderMessage(),
+                    });
+                }
+
+                reminder.SetNextAnnouncementTypeAndTime();
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex, nameof(AnnounceAppointmentRemindersAsync));
+        }
     }
 
     private async Task HandleServiceCallAsync()
     {
-        while (true)
+        while (!applicationStopping.IsCancellationRequested)
         {
-            var serviceType = await serviceTrigger.Task;
-
-            logger.LogInformation("Service {ServiceType} was called", serviceType);
-
             try
             {
+                var serviceType = await serviceTrigger.Task;
+                serviceTrigger = new TaskCompletionSource<AppointmentRemindersServiceType>();
+
+                logger.LogInformation("Service {ServiceType} was called", serviceType);
+
                 using var scope = serviceScopeFactory.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<NuttyDbContext>();
                 switch (serviceType)
@@ -274,31 +343,32 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
                     case AppointmentRemindersServiceType.CancelLastReminder:
                         var lastReminder = await dbContext.AppointmentReminders
                             .OrderByDescending(r => r.LastAnnouncement)
-                            .FirstOrDefaultAsync();
+                            .FirstOrDefaultAsync(applicationStopping);
                         lastReminder?.Cancel();
                         break;
                     default:
                         break;
                 }
 
-                await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync(applicationStopping);
             }
             catch (Exception ex)
             {
                 HandleException(ex, nameof(HandleServiceCallAsync));
             }
-
-            serviceTrigger = new TaskCompletionSource<AppointmentRemindersServiceType>();
         }
     }
 
     private void HandleException(Exception exception, string taskName)
     {
         logger.LogError(exception, "Exception in appointment reminders task: {TaskName}", taskName);
-        homeAssistantServices.Notify.MobileAppPhoneChris(new NotifyMobileAppPhoneChrisParameters
+        if (options.NotificationOfExceptions)
         {
-            Title = $"Appointment Reminders Exception: {taskName}",
-            Message = exception.Message,
-        });
+            homeAssistantServices.Notify.MobileAppPhoneChris(new NotifyMobileAppPhoneChrisParameters
+            {
+                Title = $"Appointment Reminders Exception: {taskName}",
+                Message = exception.Message,
+            });
+        }
     }
 }

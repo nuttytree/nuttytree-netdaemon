@@ -5,7 +5,7 @@ using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 
 namespace NuttyTree.NetDaemon.Application.Announcements;
 
-internal class AnnouncementsService : IAnnouncementsService, IDisposable
+internal class AnnouncementsService : IAnnouncementsService, IAsyncDisposable
 {
     private static readonly List<string> InformationPrefixes = new List<string>
     {
@@ -16,7 +16,6 @@ internal class AnnouncementsService : IAnnouncementsService, IDisposable
 
     private static readonly List<string> WarningPrefixes = new List<string>
     {
-        "Warning",
         "Important reminder",
     };
 
@@ -30,7 +29,7 @@ internal class AnnouncementsService : IAnnouncementsService, IDisposable
 
     private readonly SemaphoreSlim rateLimiter = new SemaphoreSlim(1, 1);
 
-    private readonly IServiceScope serviceScope;
+    private readonly AsyncServiceScope serviceScope;
 
     private readonly ILogger<AnnouncementsService> logger;
 
@@ -55,7 +54,7 @@ internal class AnnouncementsService : IAnnouncementsService, IDisposable
         IHostApplicationLifetime applicationLifetime,
         ILogger<AnnouncementsService> logger)
     {
-        serviceScope = serviceScopeFactory.CreateScope();
+        serviceScope = serviceScopeFactory.CreateAsyncScope();
         applicationStopping = applicationLifetime.ApplicationStopping;
         this.logger = logger;
 
@@ -129,12 +128,12 @@ internal class AnnouncementsService : IAnnouncementsService, IDisposable
             .IsComplete.Task.WaitAsync(cancellationToken);
     }
 
-    public void Dispose()
+    public ValueTask DisposeAsync()
     {
         rateLimiter?.Dispose();
         releaseRateLimiter?.Dispose();
         delayedAnnouncementDue?.Dispose();
-        serviceScope?.Dispose();
+        return serviceScope.DisposeAsync();
     }
 
     private void HandleStateChanges()
