@@ -68,6 +68,9 @@ namespace NuttyTree.NetDaemon.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("ArriveLeadMinutes")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("LastAnnouncement")
                         .HasColumnType("TEXT");
 

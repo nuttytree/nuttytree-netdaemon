@@ -11,7 +11,7 @@ using NuttyTree.NetDaemon.Infrastructure.Database;
 namespace NuttyTree.NetDaemon.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(NuttyDbContext))]
-    [Migration("20221004183854_AppointmentReminders")]
+    [Migration("20221007132034_AppointmentReminders")]
     partial class AppointmentReminders
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -69,6 +69,9 @@ namespace NuttyTree.NetDaemon.Infrastructure.Database.Migrations
                     b.Property<string>("AppointmentId")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("ArriveLeadMinutes")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("LastAnnouncement")
                         .HasColumnType("TEXT");

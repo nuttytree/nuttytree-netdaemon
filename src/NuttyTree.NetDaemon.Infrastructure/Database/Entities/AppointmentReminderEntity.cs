@@ -11,6 +11,8 @@ public class AppointmentReminderEntity
 
     public ReminderType Type { get; set; }
 
+    public int? ArriveLeadMinutes { get; set; }
+
     public NextAnnouncementType? NextAnnouncementType { get; set; }
 
     public DateTime? NextAnnouncement { get; set; }

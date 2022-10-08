@@ -19,7 +19,7 @@ public static class Program
                     webBuilder.UseStartup<Startup>();
                 })
                 .Build();
-            ////await host.MigrateDatabaseAsync();
+            await host.MigrateDatabaseAsync();
             await host.RunAsync();
         }
         catch (Exception ex)

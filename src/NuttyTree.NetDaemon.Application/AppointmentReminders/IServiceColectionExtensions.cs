@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NetDaemon.Client.Settings;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.HomeAssistant;
+using NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
 using Refit;
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders;
@@ -12,6 +13,9 @@ public static class IServiceColectionExtensions
 {
     public static IServiceCollection AddAppointmentRemindersApp(this IServiceCollection services)
     {
+        services.AddOptions<AppointmentRemindersOptions>()
+            .BindConfiguration(nameof(AppointmentReminders));
+
         services.AddRefitClient<IHomeAssistantCalendarApi>()
             .AddDefaultRetryPolicy()
             .ConfigureHttpClient((serviceProvider, client) =>
