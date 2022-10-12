@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Serilog;
+using Serilog.Events;
 
 namespace NuttyTree.NetDaemon.Infrastructure.Logging;
 
@@ -9,6 +10,7 @@ public static class IHostBuilderExtensions
     {
         return builder.UseSerilog((context, config) =>
         {
+            config.MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning);
             config.WriteTo.Async(sinkConfig =>
             {
                 sinkConfig.Console();

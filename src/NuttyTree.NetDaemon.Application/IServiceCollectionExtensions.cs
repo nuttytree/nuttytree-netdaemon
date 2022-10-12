@@ -31,7 +31,7 @@ public static class IServiceCollectionExtensions
         services
             .AddDatabase()
             .AddHomeAssistantEntitiesAndServices()
-            .AddPeriodicScheduler();
+            .AddTaskScheduler();
 
         return services;
     }

@@ -6,10 +6,10 @@ namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Extensions;
 internal static class HomeAssistantAppoinmentExtensions
 {
     public static DateTime GetStartDateTime(this HomeAssistantAppointment appointment)
-        => appointment.Start?.DateTime ?? appointment.Start?.Date ?? DateTime.MinValue;
+        => (appointment.Start?.DateTime ?? appointment.Start?.Date ?? DateTime.MinValue).ToUniversalTime();
 
     public static DateTime? GetEndDateTime(this HomeAssistantAppointment appointment)
-        => appointment.End?.DateTime ?? appointment.End?.Date;
+        => (appointment.End?.DateTime ?? appointment.End?.Date)?.ToUniversalTime();
 
     public static bool GetIsAllDay(this HomeAssistantAppointment appointment)
         => appointment.Start?.DateTime == null
@@ -24,5 +24,12 @@ internal static class HomeAssistantAppoinmentExtensions
             appointment.Location,
             appointment.GetStartDateTime(),
             appointment.GetEndDateTime(),
-            appointment.GetIsAllDay());
+            appointment.GetIsAllDay())
+        {
+            Reminders = new List<AppointmentReminderEntity>
+            {
+                new AppointmentReminderEntity($"{appointment.Id}-Start", ReminderType.Start),
+                new AppointmentReminderEntity($"{appointment.Id}-End", ReminderType.End),
+            }
+        };
 }
