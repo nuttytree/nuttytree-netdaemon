@@ -1,4 +1,5 @@
-﻿using NuttyTree.NetDaemon.ExternalServices.Waze.Models;
+﻿using NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
+using NuttyTree.NetDaemon.ExternalServices.Waze.Models;
 using NuttyTree.NetDaemon.Infrastructure.Database.Entities;
 using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentConstants;
 
@@ -14,13 +15,7 @@ internal static class AppointmentReminderEntityExtensions
     }
 
     public static LocationCoordinates GetLocationCoordinates(this AppointmentReminderEntity reminder)
-    {
-        return new LocationCoordinates
-        {
-            Latitude = reminder.Appointment.Latitude ?? 0,
-            Longitude = reminder.Appointment.Longitude ?? 0,
-        };
-    }
+        => reminder.Appointment.GetLocationCoordinates();
 
     public static DateTime GetArriveDateTime(this AppointmentReminderEntity reminder)
     {
@@ -28,31 +23,32 @@ internal static class AppointmentReminderEntityExtensions
             .AddMinutes(-1 * reminder.ArriveLeadMinutes ?? 0);
     }
 
-    public static void SetTravelTime(this AppointmentReminderEntity reminder, TravelTime? travelTime, int maxReminderMiles)
+    public static void SetTravelTime(this AppointmentReminderEntity reminder, TravelTime? travelTime, AppointmentRemindersOptions options)
     {
         if (travelTime != null)
         {
             reminder.TravelMiles = travelTime.Miles;
             reminder.TravelMinutes = travelTime.Minutes;
-            if (travelTime.Miles > maxReminderMiles)
+            if (travelTime.Miles > options.MaxReminderMiles)
             {
                 reminder.Cancel();
             }
             else
             {
-                reminder.NextTravelTimeUpdate = reminder.NextTravelTimeUpdate == DateTime.MinValue
-                    ? reminder.GetArriveDateTime().AddHours(-4)
-                    : DateTime.UtcNow.AddMinutes(5);
-                reminder.NextAnnouncement = reminder.GetArriveDateTime()
-                    .AddMinutes(-1 * travelTime.Minutes)
-                    .AddMinutes(-1 * (int)reminder.NextAnnouncementType!);
+                var arriveDateTime = reminder.GetArriveDateTime();
+                reminder.NextTravelTimeUpdate = reminder.TravelMiles == 0
+                    ? null
+                    : arriveDateTime.AddHours(-4) > DateTime.UtcNow
+                        ? arriveDateTime.AddHours(-4)
+                        : DateTime.UtcNow.AddMinutes(5);
+                reminder.SetNextAnnouncementDateTime();
             }
         }
     }
 
-    public static string GetReminderMessage(this AppointmentReminderEntity reminder)
+    public static string GetReminderMessage(this AppointmentReminderEntity reminder, AppointmentRemindersOptions options)
     {
-        var isAtHome = reminder.GetLocationCoordinates().Equals(HomeLocation);
+        var isAtHome = reminder.GetLocationCoordinates().Equals(options.HomeLocation);
         var reminderMessage = string.Empty;
 
         if (reminder.Appointment.Person == null)
@@ -81,7 +77,7 @@ internal static class AppointmentReminderEntityExtensions
         return reminderMessage;
     }
 
-    public static void SetNextAnnouncementTypeAndTime(this AppointmentReminderEntity reminder)
+    public static void UpdateNextAnnouncementTypeAndTime(this AppointmentReminderEntity reminder)
     {
         reminder.LastAnnouncement = DateTime.UtcNow;
         reminder.NextAnnouncementType = reminder.NextAnnouncementType switch
@@ -92,6 +88,11 @@ internal static class AppointmentReminderEntityExtensions
             NextAnnouncementType.FifteenMinutes => NextAnnouncementType.Now,
             _ => NextAnnouncementType.None,
         };
+        reminder.SetNextAnnouncementDateTime();
+    }
+
+    private static void SetNextAnnouncementDateTime(this AppointmentReminderEntity reminder)
+    {
         reminder.NextAnnouncement = reminder.NextAnnouncementType == NextAnnouncementType.None
             ? null
             : reminder.GetArriveDateTime()
