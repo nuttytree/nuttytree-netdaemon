@@ -1,6 +1,7 @@
 ﻿using NetDaemon.Extensions.Scheduler;
 using NetDaemon.Runtime;
 using NuttyTree.NetDaemon.Application;
+using Serilog;
 
 namespace NuttyTree.NetDaemon;
 
@@ -28,6 +29,8 @@ public class Startup
     public void Configure(IApplicationBuilder app)
     {
         app.UseStaticFiles();
+
+        app.UseSerilogRequestLogging();
 
         app.UseRouting();
 

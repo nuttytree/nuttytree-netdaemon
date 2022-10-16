@@ -1,7 +1,6 @@
 ﻿using NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
 using NuttyTree.NetDaemon.ExternalServices.Waze.Models;
 using NuttyTree.NetDaemon.Infrastructure.Database.Entities;
-using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentConstants;
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Extensions;
 
