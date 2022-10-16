@@ -4,7 +4,9 @@ namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
 
 internal class AppointmentRemindersOptions
 {
-    public int AppointmentUpdatesSchedulePeriod { get; set; } = 30;
+    public int AppointmentUpdatesSchedulePeriod { get; set; } = 60;
+
+    public string? HomeAddress { get; set; }
 
     public LocationCoordinates? HomeLocation { get; set; }
 

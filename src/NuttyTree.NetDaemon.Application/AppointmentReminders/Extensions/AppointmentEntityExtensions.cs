@@ -49,8 +49,9 @@ internal static class AppointmentEntityExtensions
     public static LocationCoordinates? GetKnownLocationCoordinates(this AppointmentEntity appointment, AppointmentRemindersOptions options)
     {
         if (appointment.Calendar == FamilyCalendar &&
-            (appointment.Location!.Replace(" ", string.Empty, StringComparison.Ordinal)?.Contains("18275Evener", StringComparison.OrdinalIgnoreCase) == true
-                || string.Equals(appointment.Location, "Home", StringComparison.OrdinalIgnoreCase)))
+            (appointment.Location!.Replace(" ", string.Empty, StringComparison.Ordinal)?
+                .Contains(options.HomeAddress!.Replace(" ", string.Empty, StringComparison.Ordinal), StringComparison.OrdinalIgnoreCase) == true
+                    || string.Equals(appointment.Location, "Home", StringComparison.OrdinalIgnoreCase)))
         {
             return options.HomeLocation;
         }

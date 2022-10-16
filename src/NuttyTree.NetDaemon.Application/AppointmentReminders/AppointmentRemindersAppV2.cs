@@ -95,7 +95,7 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
             foreach (var calendar in new[] { FamilyCalendar, ScoutsCalendar })
             {
                 var homeAssistantAppointments = (await homeAssistantCalendar
-                    .GetAppointmentsAsync(calendar, DateTime.Now.AddDays(-1), DateTime.Now.AddDays(30), cancellationToken))
+                    .GetAppointmentsAsync(calendar, DateTime.Now.AddHours(-1), DateTime.Now.AddDays(30), cancellationToken))
                     .Where(a => !string.IsNullOrWhiteSpace(a.Location));
                 var appointments = await dbContext.Appointments
                     .Where(a => a.Calendar == calendar)
@@ -267,7 +267,7 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
             }
             else
             {
-                return reminderToAnnounce.NextTravelTimeUpdate!.Value - DateTime.UtcNow;
+                return reminderToAnnounce.NextAnnouncement!.Value - DateTime.UtcNow;
             }
         }
         catch (Exception ex)
