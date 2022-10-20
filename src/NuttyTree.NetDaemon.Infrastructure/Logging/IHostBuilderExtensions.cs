@@ -11,9 +11,10 @@ public static class IHostBuilderExtensions
         return builder.UseSerilog((context, config) =>
         {
             config.MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning);
+            config.MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning);
             config.WriteTo.Async(sinkConfig =>
             {
-                sinkConfig.Console();
+                sinkConfig.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}");
             });
         });
     }
