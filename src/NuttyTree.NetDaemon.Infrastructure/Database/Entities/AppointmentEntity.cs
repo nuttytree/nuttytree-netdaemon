@@ -1,6 +1,6 @@
 ﻿namespace NuttyTree.NetDaemon.Infrastructure.Database.Entities;
 
-public class AppointmentEntity
+public sealed class AppointmentEntity
 {
     public AppointmentEntity(
         string id,

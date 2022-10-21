@@ -1,13 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace NuttyTree.NetDaemon.Infrastructure.Scheduler
+namespace NuttyTree.NetDaemon.Infrastructure.Scheduler;
+
+public static class IServiceColectionExtensions
 {
-    public static class IServiceColectionExtensions
+    public static IServiceCollection AddTaskScheduler(this IServiceCollection services)
     {
-        public static IServiceCollection AddTaskScheduler(this IServiceCollection services)
-        {
-            return services
-                .AddTransient<ITaskScheduler, TaskScheduler>();
-        }
+        return services
+            .AddTransient<ITaskScheduler, TaskScheduler>();
     }
 }

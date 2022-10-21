@@ -4,7 +4,7 @@ using System.Text;
 
 namespace NuttyTree.NetDaemon.ExternalServices.HomeAssistantCalendar.Models;
 
-public class HomeAssistantAppointment
+public sealed class HomeAssistantAppointment
 {
     private string? id;
 

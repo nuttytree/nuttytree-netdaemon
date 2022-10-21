@@ -1,6 +1,6 @@
 ﻿namespace NuttyTree.NetDaemon.Application.Announcements.Models;
 
-internal class Announcement
+internal sealed class Announcement
 {
     public Announcement(
         string message,

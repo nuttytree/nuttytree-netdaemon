@@ -18,7 +18,6 @@ using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentCon
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders;
 
-[Focus]
 [NetDaemonApp]
 internal sealed class AppointmentRemindersAppV2 : IDisposable
 {

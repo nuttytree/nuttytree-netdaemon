@@ -1,11 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using NuttyTree.NetDaemon.Application.Announcements.Models;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 
 namespace NuttyTree.NetDaemon.Application.Announcements;
 
-internal class AnnouncementsService : IAnnouncementsService, IAsyncDisposable
+internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncementsInternalService, IDisposable
 {
     private static readonly List<string> InformationPrefixes = new List<string>
     {
@@ -29,17 +28,15 @@ internal class AnnouncementsService : IAnnouncementsService, IAsyncDisposable
 
     private readonly SemaphoreSlim rateLimiter = new SemaphoreSlim(1, 1);
 
-    private readonly AsyncServiceScope serviceScope;
-
     private readonly ILogger<AnnouncementsService> logger;
 
     private readonly CancellationToken applicationStopping;
 
-    private readonly IEntities homeAssistantEntities;
+    private IEntities? homeAssistantEntities;
 
-    private readonly IHaContext haContext;
+    private IHaContext? haContext;
 
-    private readonly IServices homeAssistantServices;
+    private IServices? homeAssistantServices;
 
     private TaskCompletionSource nextAnnouncementAvailable = new TaskCompletionSource();
 
@@ -50,21 +47,23 @@ internal class AnnouncementsService : IAnnouncementsService, IAsyncDisposable
     private CancellationTokenSource? releaseRateLimiter;
 
     public AnnouncementsService(
-        IServiceScopeFactory serviceScopeFactory,
         IHostApplicationLifetime applicationLifetime,
         ILogger<AnnouncementsService> logger)
     {
-        serviceScope = serviceScopeFactory.CreateAsyncScope();
         applicationStopping = applicationLifetime.ApplicationStopping;
         this.logger = logger;
 
-        homeAssistantEntities = serviceScope.ServiceProvider.GetRequiredService<IEntities>();
-        haContext = serviceScope.ServiceProvider.GetRequiredService<IHaContext>();
-        homeAssistantServices = serviceScope.ServiceProvider.GetRequiredService<IServices>();
+        _ = SendAnnouncementsAsync();
+    }
+
+    public void Initialize(IEntities homeAssistantEntities, IHaContext haContext, IServices homeAssistantServices)
+    {
+        this.homeAssistantEntities = homeAssistantEntities;
+        this.haContext = haContext;
+        this.homeAssistantServices = homeAssistantServices;
 
         homeAssistantEntities.InputSelect.HouseMode.StateChanges().Subscribe(_ => HandleStateChanges());
         homeAssistantEntities.BinarySensor.MelissaIsInBed.StateChanges().Subscribe(_ => HandleStateChanges());
-        HandleStateChanges();
 
         haContext.RegisterServiceCallBack<AnnouncementRequest>(
             "announcements_send_announcement",
@@ -83,7 +82,7 @@ internal class AnnouncementsService : IAnnouncementsService, IAsyncDisposable
             "announcements_enable_announcements",
             r => EnableAnnouncements());
 
-        _ = SendAnnouncementsAsync();
+        HandleStateChanges();
     }
 
     public void DisableAnnouncements(int minutes)
@@ -99,7 +98,7 @@ internal class AnnouncementsService : IAnnouncementsService, IAsyncDisposable
                 nextAnnouncementAvailable.TrySetResult();
             });
             logger.LogInformation("Announcements disabled until {DisabledUntil}", disabledUntil);
-            haContext.SetEntityState("binary_sensor.announcments_enabled", "off", new { until = $"{(minutes == int.MaxValue ? "Indefinitely" : disabledUntil)}" });
+            haContext?.SetEntityState("binary_sensor.announcments_enabled", "off", new { until = $"{(minutes == int.MaxValue ? "Indefinitely" : disabledUntil)}" });
         }
     }
 
@@ -109,7 +108,7 @@ internal class AnnouncementsService : IAnnouncementsService, IAsyncDisposable
         disabledUntil = null;
         nextAnnouncementAvailable.TrySetResult();
         logger.LogInformation("Announcements enabled", disabledUntil);
-        haContext.SetEntityState("binary_sensor.announcments_enabled", "on", new { });
+        haContext?.SetEntityState("binary_sensor.announcments_enabled", "on", new { });
     }
 
     public void SendAnnouncement(
@@ -128,17 +127,17 @@ internal class AnnouncementsService : IAnnouncementsService, IAsyncDisposable
             .IsComplete.Task.WaitAsync(cancellationToken);
     }
 
-    public ValueTask DisposeAsync()
+    public void Dispose()
     {
         rateLimiter?.Dispose();
         releaseRateLimiter?.Dispose();
         delayedAnnouncementDue?.Dispose();
-        return serviceScope.DisposeAsync();
     }
 
     private void HandleStateChanges()
     {
-        if (homeAssistantEntities.InputSelect.HouseMode.State.CaseInsensitiveEquals("Day")
+        if (homeAssistantEntities != null
+            && homeAssistantEntities.InputSelect.HouseMode.State.CaseInsensitiveEquals("Day")
             && homeAssistantEntities.BinarySensor.MelissaIsInBed.IsOff())
         {
             EnableAnnouncements();
@@ -182,7 +181,8 @@ internal class AnnouncementsService : IAnnouncementsService, IAsyncDisposable
                     {
                         if (disabledUntil == null || nextAnnouncement.Priority == AnnouncementPriority.Critical)
                         {
-                            if (nextAnnouncement.Person == null || haContext.Entity($"person.{nextAnnouncement.Person.ToLowerInvariant()}").State.CaseInsensitiveEquals("home"))
+                            if (nextAnnouncement.Person == null
+                                || haContext?.Entity($"person.{nextAnnouncement.Person.ToLowerInvariant()}").State.CaseInsensitiveEquals("home") == true)
                             {
                                 var message = nextAnnouncement.Priority switch
                                 {
@@ -192,7 +192,7 @@ internal class AnnouncementsService : IAnnouncementsService, IAsyncDisposable
                                     _ => string.Empty,
                                 };
                                 message += $", {nextAnnouncement.Message}";
-                                homeAssistantServices.Notify.AlexaMediaDevicesInside(new NotifyAlexaMediaDevicesInsideParameters
+                                homeAssistantServices?.Notify.AlexaMediaDevicesInside(new NotifyAlexaMediaDevicesInsideParameters
                                 {
                                     Data = new { type = "announce" },
                                     Message = message,

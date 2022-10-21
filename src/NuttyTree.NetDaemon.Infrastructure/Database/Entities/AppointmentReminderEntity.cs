@@ -1,5 +1,6 @@
 ﻿namespace NuttyTree.NetDaemon.Infrastructure.Database.Entities;
-public class AppointmentReminderEntity
+
+public sealed class AppointmentReminderEntity
 {
     public AppointmentReminderEntity(string id, ReminderType type)
     {

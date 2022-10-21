@@ -3,7 +3,7 @@ using NuttyTree.NetDaemon.ExternalServices.Waze.WazeApi;
 
 namespace NuttyTree.NetDaemon.ExternalServices.Waze;
 
-internal class WazeTravelTimes : IWazeTravelTimes
+internal sealed class WazeTravelTimes : IWazeTravelTimes
 {
     private static readonly SemaphoreSlim RateLimiter = new SemaphoreSlim(1, 1);
 

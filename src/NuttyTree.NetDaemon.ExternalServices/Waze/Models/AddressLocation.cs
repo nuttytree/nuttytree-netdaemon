@@ -1,6 +1,6 @@
 ﻿namespace NuttyTree.NetDaemon.ExternalServices.Waze.Models;
 
-public class AddressLocation
+public sealed class AddressLocation
 {
     public object? Bounds { get; set; }
 

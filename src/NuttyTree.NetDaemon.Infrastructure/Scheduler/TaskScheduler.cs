@@ -2,7 +2,7 @@
 
 namespace NuttyTree.NetDaemon.Infrastructure.Scheduler;
 
-internal class TaskScheduler : ITaskScheduler
+internal sealed class TaskScheduler : ITaskScheduler
 {
     private readonly ILogger<TaskScheduler> logger;
 

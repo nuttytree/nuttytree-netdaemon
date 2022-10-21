@@ -1,6 +1,6 @@
 ﻿namespace NuttyTree.NetDaemon.ExternalServices.HomeAssistantCalendar.Models;
 
-public class HomeAssistantAppointmentDateTime
+public sealed class HomeAssistantAppointmentDateTime
 {
     public DateTime? Date { get; set; }
 

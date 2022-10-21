@@ -1,6 +1,6 @@
 ﻿namespace NuttyTree.NetDaemon.ExternalServices.Waze.WazeApi.Models;
 
-internal class RouteCostinfo
+internal sealed class RouteCostinfo
 {
     public int UnbiasedAstarCost { get; set; }
 

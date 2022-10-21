@@ -1,6 +1,6 @@
 ﻿namespace NuttyTree.NetDaemon.ExternalServices.Waze.WazeApi.Models;
 
-internal class RoutePath
+internal sealed class RoutePath
 {
     public int SegmentId { get; set; }
 
