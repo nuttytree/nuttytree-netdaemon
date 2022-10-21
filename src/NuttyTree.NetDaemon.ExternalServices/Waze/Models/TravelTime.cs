@@ -1,6 +1,6 @@
 ﻿namespace NuttyTree.NetDaemon.ExternalServices.Waze.Models;
 
-public class TravelTime
+public sealed class TravelTime
 {
     public TravelTime(double miles, double minutes)
     {

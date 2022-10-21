@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace NuttyTree.NetDaemon.Infrastructure.Database;
 
-public class MessagingContextFactory : IDesignTimeDbContextFactory<NuttyDbContext>
+public sealed class MessagingContextFactory : IDesignTimeDbContextFactory<NuttyDbContext>
 {
     public NuttyDbContext CreateDbContext(string[] args)
     {

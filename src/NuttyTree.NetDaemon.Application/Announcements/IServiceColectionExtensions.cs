@@ -7,6 +7,7 @@ public static class IServiceColectionExtensions
     public static IServiceCollection AddAnnouncementsService(this IServiceCollection services)
     {
         return services
-            .AddSingleton<IAnnouncementsService, AnnouncementsService>();
+            .AddSingleton<IAnnouncementsInternalService, AnnouncementsService>()
+            .AddTransient<IAnnouncementsService>(sp => sp.GetRequiredService<IAnnouncementsInternalService>());
     }
 }

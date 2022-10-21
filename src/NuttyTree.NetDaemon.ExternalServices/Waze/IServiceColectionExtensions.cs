@@ -3,22 +3,21 @@ using Microsoft.Extensions.DependencyInjection;
 using NuttyTree.NetDaemon.ExternalServices.Waze.WazeApi;
 using Refit;
 
-namespace NuttyTree.NetDaemon.ExternalServices.Waze
-{
-    public static class IServiceColectionExtensions
-    {
-        public static IServiceCollection AddWaze(this IServiceCollection services)
-        {
-            services.AddRefitClient<IWazeApi>()
-                .AddDefaultRetryPolicy()
-                .ConfigureHttpClient(client =>
-                {
-                    client.BaseAddress = new Uri("https://www.waze.com");
-                    client.DefaultRequestHeaders.Clear();
-                    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Mozilla", "5.0"));
-                });
+namespace NuttyTree.NetDaemon.ExternalServices.Waze;
 
-            return services.AddTransient<IWazeTravelTimes, WazeTravelTimes>();
-        }
+public static class IServiceColectionExtensions
+{
+    public static IServiceCollection AddWaze(this IServiceCollection services)
+    {
+        services.AddRefitClient<IWazeApi>()
+            .AddDefaultRetryPolicy()
+            .ConfigureHttpClient(client =>
+            {
+                client.BaseAddress = new Uri("https://www.waze.com");
+                client.DefaultRequestHeaders.Clear();
+                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Mozilla", "5.0"));
+            });
+
+        return services.AddTransient<IWazeTravelTimes, WazeTravelTimes>();
     }
 }

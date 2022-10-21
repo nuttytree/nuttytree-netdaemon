@@ -2,7 +2,7 @@
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
 
-internal class AppointmentRemindersOptions
+internal sealed class AppointmentRemindersOptions
 {
     public int AppointmentUpdatesSchedulePeriod { get; set; } = 60;
 

@@ -1,6 +1,6 @@
 ﻿namespace NuttyTree.NetDaemon.ExternalServices.Waze.WazeApi.Models;
 
-internal class RouteResponse
+internal sealed class RouteResponse
 {
     public Route? Response { get; set; }
 

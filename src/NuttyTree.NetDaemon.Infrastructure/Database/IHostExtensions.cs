@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace NuttyTree.NetDaemon.Infrastructure.Database;
+
 public static class IHostExtensions
 {
     public static async Task MigrateDatabaseAsync(this IHost host)

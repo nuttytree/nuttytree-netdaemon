@@ -2,7 +2,7 @@
 
 namespace NuttyTree.NetDaemon.ExternalServices.Waze.Models;
 
-public class LocationCoordinates : IEquatable<LocationCoordinates>
+public sealed class LocationCoordinates : IEquatable<LocationCoordinates>
 {
     public static LocationCoordinates Empty { get; } = new LocationCoordinates { Latitude = 0, Longitude = 0 };
 

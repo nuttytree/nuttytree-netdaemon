@@ -4,7 +4,7 @@ using NuttyTree.NetDaemon.Infrastructure.Database.Entities;
 
 namespace NuttyTree.NetDaemon.Infrastructure.Database;
 
-public class NuttyDbContext : DbContext
+public sealed class NuttyDbContext : DbContext
 {
     public NuttyDbContext(DbContextOptions<NuttyDbContext> options)
         : base(options)

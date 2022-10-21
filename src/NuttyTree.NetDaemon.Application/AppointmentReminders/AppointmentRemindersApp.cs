@@ -14,7 +14,7 @@ using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentCon
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders;
 
 //[NetDaemonApp]
-internal class AppointmentRemindersApp : IAsyncInitializable
+internal sealed class AppointmentRemindersApp : IAsyncInitializable
 {
     private readonly IFileSystem fileSystem;
 

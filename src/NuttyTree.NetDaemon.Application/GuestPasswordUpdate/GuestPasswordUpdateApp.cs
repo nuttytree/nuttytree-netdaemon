@@ -7,8 +7,8 @@ using NuttyTree.NetDaemon.ExternalServices.RandomWords;
 
 namespace NuttyTree.NetDaemon.Application.GuestPasswordUpdate
 {
-    [NetDaemonApp]
-    internal class GuestPasswordUpdateApp
+    //[NetDaemonApp]
+    internal sealed class GuestPasswordUpdateApp
     {
         private const string GuestSSID = "NuttyHome-Guest";
 
