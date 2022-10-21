@@ -197,7 +197,7 @@ public class AnnouncementsService_Tests
 
         var hostApplicationLifetime = new Mock<IHostApplicationLifetime>();
 
-        announcementsService = new AnnouncementsService(serviceScopeFactory.Object, hostApplicationLifetime.Object, Mock.Of<ILogger<AnnouncementsService>>());
+        announcementsService = new AnnouncementsService(hostApplicationLifetime.Object, Mock.Of<ILogger<AnnouncementsService>>());
 
         if (!announcementsAreEnabled)
         {
