@@ -1,4 +1,5 @@
-﻿using NetDaemon.Extensions.Scheduler;
+﻿using Microsoft.OpenApi.Models;
+using NetDaemon.Extensions.Scheduler;
 using NetDaemon.Runtime;
 using NuttyTree.NetDaemon.Application;
 using Serilog;
@@ -24,6 +25,13 @@ public class Startup
         services.AddApplication();
 
         services.AddRazorPages();
+
+        services.AddMvc();
+
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "Nuttytree NetDaemon Service", Version = "v1" });
+        });
     }
 
     public void Configure(IApplicationBuilder app)
@@ -38,7 +46,14 @@ public class Startup
 
         app.UseEndpoints(endpoints =>
         {
+            endpoints.MapControllers();
             endpoints.MapRazorPages();
+            endpoints.MapSwagger();
+        });
+
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("v1/swagger.json", "Nuttytree NetDaemon Service");
         });
     }
 }

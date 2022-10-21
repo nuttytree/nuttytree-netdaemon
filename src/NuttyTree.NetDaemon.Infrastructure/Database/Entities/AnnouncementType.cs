@@ -1,6 +1,6 @@
 ﻿namespace NuttyTree.NetDaemon.Infrastructure.Database.Entities;
 
-public enum NextAnnouncementType
+public enum AnnouncementType
 {
     None = -1,
     Now = 0,

@@ -13,7 +13,7 @@ using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentCon
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders;
 
-[NetDaemonApp]
+//[NetDaemonApp]
 internal class AppointmentRemindersApp : IAsyncInitializable
 {
     private readonly IFileSystem fileSystem;
