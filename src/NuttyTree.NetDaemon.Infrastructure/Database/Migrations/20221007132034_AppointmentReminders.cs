@@ -37,6 +37,7 @@ namespace NuttyTree.NetDaemon.Infrastructure.Database.Migrations
                     Id = table.Column<string>(type: "TEXT", nullable: false),
                     Type = table.Column<int>(type: "INTEGER", nullable: false),
                     ArriveLeadMinutes = table.Column<int>(type: "INTEGER", nullable: true),
+                    AnnouncementTypes = table.Column<string>(type: "TEXT", nullable: true),
                     NextAnnouncementType = table.Column<int>(type: "INTEGER", nullable: true),
                     NextAnnouncement = table.Column<DateTime>(type: "TEXT", nullable: true),
                     LastAnnouncement = table.Column<DateTime>(type: "TEXT", nullable: true),

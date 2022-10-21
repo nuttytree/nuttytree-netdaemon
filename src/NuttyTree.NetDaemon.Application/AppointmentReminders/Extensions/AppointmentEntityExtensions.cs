@@ -18,6 +18,18 @@ internal static class AppointmentEntityExtensions
                 .Value;
     }
 
+    public static bool TryGetOverrideValue(this AppointmentEntity appointment, string valueName, out string? value)
+    {
+        value = appointment.Description?
+            .Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Select(l => l.Split(':', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            .Where(sl => sl.Length == 2)
+            .Select(sl => KeyValuePair.Create(sl[0], sl[1]))
+            .FirstOrDefault(kv => kv.Key.CaseInsensitiveEquals(valueName))
+            .Value;
+        return value != null;
+    }
+
     public static bool HasChanged(this AppointmentEntity existing, HomeAssistantAppointment updated)
     {
         return
@@ -96,29 +108,59 @@ internal static class AppointmentEntityExtensions
 
     public static void SetAppointmentReminderOptions(this AppointmentEntity appointment, AppointmentRemindersOptions options)
     {
-        if (appointment.Calendar == ScoutsCalendar && appointment.Summary.Contains("cancel", StringComparison.OrdinalIgnoreCase))
-        {
-            appointment.GetStartReminder().Cancel();
-            appointment.GetEndReminder().Cancel();
-        }
-
-        if (appointment.GetLocationCoordinates().Equals(options.HomeLocation))
-        {
-            appointment.GetStartReminder().ArriveLeadMinutes = 1;
-            appointment.GetEndReminder().NextAnnouncementType = NextAnnouncementType.None;
-        }
+        var startReminder = appointment.GetStartReminder();
+        var endReminder = appointment.GetEndReminder();
 
         if (appointment.Person == Mayson)
         {
             // We are going to work on reducing announcements before we introduce more announcements
-            // appointment.GetEndReminder().NextAnnouncementType ??= NextAnnouncementType.FifteenMinutes;
+            //endReminder.SetDefaultAnnouncementTypes(AnnouncementType.FifteenMinutes, AnnouncementType.Now);
         }
 
-        appointment.GetStartReminder().NextAnnouncementType ??= NextAnnouncementType.TwoHours;
-        appointment.GetEndReminder().NextAnnouncementType ??= NextAnnouncementType.None;
-        appointment.GetStartReminder().ArriveLeadMinutes ??= options.DefaultStartLeadMinutes;
-        appointment.GetEndReminder().ArriveLeadMinutes ??= options.DefaultEndLeadMinutes;
-        appointment.Reminders.ForEach(r => r.NextTravelTimeUpdate = r.NextAnnouncementType == NextAnnouncementType.None ? null : DateTime.MinValue);
+        if (appointment.GetLocationCoordinates().Equals(options.HomeLocation))
+        {
+            startReminder.ArriveLeadMinutes ??= 0;
+        }
+
+        startReminder.SetDefaultAnnouncementTypes(AnnouncementType.TwoHours, AnnouncementType.OneHour, AnnouncementType.ThirtyMinutes, AnnouncementType.FifteenMinutes, AnnouncementType.Now);
+        startReminder.ArriveLeadMinutes ??= options.DefaultStartLeadMinutes;
+        endReminder.SetDefaultAnnouncementTypes();
+        endReminder.ArriveLeadMinutes ??= options.DefaultEndLeadMinutes;
+
+        if (appointment.Calendar == FamilyCalendar)
+        {
+            if (appointment.TryGetOverrideValue("Reminders", out var reminders))
+            {
+                startReminder.AnnouncementTypes = reminders;
+            }
+
+            if (appointment.TryGetOverrideValue("LeadTime", out var leadTimeString) && int.TryParse(leadTimeString, out var leadTime))
+            {
+                startReminder.ArriveLeadMinutes = leadTime;
+            }
+
+            if (appointment.TryGetOverrideValue("EndReminders", out var endReminders))
+            {
+                endReminder.AnnouncementTypes = endReminders;
+            }
+
+            if (appointment.TryGetOverrideValue("EndLeadTime", out var endLeadTimeString) && int.TryParse(endLeadTimeString, out var endLeadTime))
+            {
+                endReminder.ArriveLeadMinutes = endLeadTime;
+            }
+        }
+
+        if (appointment.Calendar == ScoutsCalendar && appointment.Summary.Contains("cancel", StringComparison.OrdinalIgnoreCase))
+        {
+            startReminder.Cancel();
+            endReminder.Cancel();
+        }
+
+        startReminder.SetNextAnnouncementType();
+        endReminder.SetNextAnnouncementType();
+
+        startReminder.NextTravelTimeUpdate = startReminder.NextAnnouncementType == AnnouncementType.None ? null : DateTime.MinValue;
+        endReminder.NextTravelTimeUpdate = endReminder.NextAnnouncementType == AnnouncementType.None ? null : DateTime.MinValue;
     }
 
     public static AppointmentReminderEntity GetStartReminder(this AppointmentEntity appointment)

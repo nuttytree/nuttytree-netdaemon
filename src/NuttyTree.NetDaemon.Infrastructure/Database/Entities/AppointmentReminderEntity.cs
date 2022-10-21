@@ -13,7 +13,9 @@ public class AppointmentReminderEntity
 
     public int? ArriveLeadMinutes { get; set; }
 
-    public NextAnnouncementType? NextAnnouncementType { get; set; }
+    public string? AnnouncementTypes { get; set; }
+
+    public AnnouncementType? NextAnnouncementType { get; set; }
 
     public DateTime? NextAnnouncement { get; set; }
 

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using NuttyTree.NetDaemon.Application.Announcements;
+using NuttyTree.NetDaemon.Application.Announcements.Models;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.Extensions;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.Models;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
@@ -176,23 +177,31 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
             }
             else if (reminderToUpdate.NextTravelTimeUpdate <= DateTime.UtcNow)
             {
-                logger.LogInformation(
-                    "Updating the travel time for appointment {AppointmentSummary} at {AppointmentStart}",
-                    reminderToUpdate.Appointment.Summary,
-                    reminderToUpdate.Appointment.StartDateTime);
-
-                var travelTime = reminderToUpdate.GetLocationCoordinates().Equals(options.HomeLocation)
-                    ? new TravelTime(0, 0)
-                    : await wazeTravelTimes.GetTravelTimeAsync(options.HomeLocation, reminderToUpdate.GetLocationCoordinates(), reminderToUpdate.GetArriveDateTime());
-
-                // If a Scouts appointment is more than 25 miles away it is pretty sure bet we are meeting at the Church so update the location and re-calculate the travel time
-                if (reminderToUpdate.Appointment.Calendar == ScoutsCalendar && travelTime?.Miles > 25)
+                if (reminderToUpdate.GetLeaveDateTime() > DateTime.UtcNow)
                 {
-                    reminderToUpdate.Appointment.SetLocationCoordinates(DefaultScoutsLocation);
-                    travelTime = await wazeTravelTimes.GetTravelTimeAsync(options.HomeLocation, DefaultScoutsLocation, reminderToUpdate.GetArriveDateTime());
+                    logger.LogInformation(
+                        "Updating the travel time for appointment {AppointmentSummary} at {AppointmentStart}",
+                        reminderToUpdate.Appointment.Summary,
+                        reminderToUpdate.Appointment.StartDateTime);
+
+                    var travelTime = reminderToUpdate.GetLocationCoordinates().Equals(options.HomeLocation)
+                        ? new TravelTime(0, 0)
+                        : await wazeTravelTimes.GetTravelTimeAsync(options.HomeLocation, reminderToUpdate.GetLocationCoordinates(), reminderToUpdate.GetArriveDateTime());
+
+                    // If a Scouts appointment is more than 25 miles away it is pretty sure bet we are meeting at the Church so update the location and re-calculate the travel time
+                    if (reminderToUpdate.Appointment.Calendar == ScoutsCalendar && travelTime?.Miles > 25)
+                    {
+                        reminderToUpdate.Appointment.SetLocationCoordinates(DefaultScoutsLocation);
+                        travelTime = await wazeTravelTimes.GetTravelTimeAsync(options.HomeLocation, DefaultScoutsLocation, reminderToUpdate.GetArriveDateTime());
+                    }
+
+                    reminderToUpdate.SetTravelTime(travelTime, options);
+                }
+                else
+                {
+                    reminderToUpdate.NextTravelTimeUpdate = null;
                 }
 
-                reminderToUpdate.SetTravelTime(travelTime, options);
                 await dbContext.SaveChangesAsync(cancellationToken);
 
                 announcementsTask.Trigger();
@@ -244,17 +253,17 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
                         reminderToAnnounce.Appointment.Summary,
                         reminderToAnnounce.Appointment.StartDateTime);
 
-                    ////await announcementsService.SendAnnouncementAsync(
-                    ////    reminderToAnnounce.GetReminderMessage(options),
-                    ////    AnnouncementPriority.Information,
-                    ////    reminderToAnnounce.Type == ReminderType.Start ? reminderToAnnounce.Appointment.Person : null,
-                    ////    cancellationToken);
+                    await announcementsService.SendAnnouncementAsync(
+                        reminderToAnnounce.GetReminderMessage(options),
+                        AnnouncementPriority.Information,
+                        reminderToAnnounce.Type == ReminderType.Start ? reminderToAnnounce.Appointment.Person : null,
+                        cancellationToken);
 
-                    homeAssistantServices.Notify.MobileAppPhoneChris(new NotifyMobileAppPhoneChrisParameters
-                    {
-                        Title = $"Test Appointment Reminder For: {(reminderToAnnounce.Type == ReminderType.Start ? reminderToAnnounce.Appointment.Person : null) ?? "Everyone"}",
-                        Message = reminderToAnnounce.GetReminderMessage(options),
-                    });
+                    //homeAssistantServices.Notify.MobileAppPhoneChris(new NotifyMobileAppPhoneChrisParameters
+                    //{
+                    //    Title = $"Test Appointment Reminder For: {(reminderToAnnounce.Type == ReminderType.Start ? reminderToAnnounce.Appointment.Person : null) ?? "Everyone"}",
+                    //    Message = reminderToAnnounce.GetReminderMessage(options),
+                    //});
                 }
 
                 reminderToAnnounce.UpdateNextAnnouncementTypeAndTime();
