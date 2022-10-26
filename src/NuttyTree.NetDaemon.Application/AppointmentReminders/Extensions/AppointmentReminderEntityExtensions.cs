@@ -1,4 +1,5 @@
-﻿using NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
+﻿using System.Globalization;
+using NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
 using NuttyTree.NetDaemon.ExternalServices.Waze.Models;
 using NuttyTree.NetDaemon.Infrastructure.Database.Entities;
 
@@ -8,7 +9,7 @@ internal static class AppointmentReminderEntityExtensions
 {
     public static void Cancel(this AppointmentReminderEntity reminder)
     {
-        reminder.NextAnnouncementType = AppointmentAnnouncementType.None;
+        reminder.NextAnnouncementType = -1;
         reminder.NextAnnouncement = null;
         reminder.NextTravelTimeUpdate = null;
     }
@@ -51,30 +52,30 @@ internal static class AppointmentReminderEntityExtensions
         }
     }
 
-    public static void SetDefaultAnnouncementTypes(this AppointmentReminderEntity reminder, params AppointmentAnnouncementType[] announcementTypes)
+    public static void SetDefaultAnnouncementTypes(this AppointmentReminderEntity reminder, params int[] announcementTypes)
     {
-        reminder.AnnouncementTypes ??= string.Join(',', announcementTypes.Select(t => $"{(int)t}"));
+        reminder.AnnouncementTypes ??= string.Join(',', announcementTypes);
     }
 
-    public static List<AppointmentAnnouncementType> GetAnnouncementTypes(this AppointmentReminderEntity reminder)
+    public static List<int> GetAnnouncementTypes(this AppointmentReminderEntity reminder)
     {
         var announcementTypes = reminder.AnnouncementTypes == null
-            ? new List<AppointmentAnnouncementType>()
+            ? new List<int>()
             : reminder.AnnouncementTypes
                 .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
                 .Distinct()
-                .Where(t => int.TryParse(t, out var typeInt) && typeInt != -1 && Enum.IsDefined((AppointmentAnnouncementType)typeInt))
-                .Select(t => Enum.Parse<AppointmentAnnouncementType>(t))
+                .Where(t => int.TryParse(t, out var typeInt) && typeInt >= 0 && typeInt <= 120)
+                .Select(t => int.Parse(t, CultureInfo.InvariantCulture))
                 .OrderByDescending(t => t)
                 .ToList();
-        announcementTypes.Add(AppointmentAnnouncementType.None);
+        announcementTypes.Add(-1);
         return announcementTypes;
     }
 
     public static void SetNextAnnouncementType(this AppointmentReminderEntity reminder)
     {
         reminder.NextAnnouncementType = reminder.GetAnnouncementTypes()
-            .First(t => t <= (reminder.NextAnnouncementType ?? AppointmentAnnouncementType.TwoHours));
+            .First(t => t <= (reminder.NextAnnouncementType ?? 120));
     }
 
     public static string GetReminderMessage(this AppointmentReminderEntity reminder, AppointmentRemindersOptions options)
@@ -97,12 +98,11 @@ internal static class AppointmentReminderEntityExtensions
 
         reminderMessage += reminder.NextAnnouncementType switch
         {
-            AppointmentAnnouncementType.TwoHours => $" in {(isAtHome ? null : "approximately")} 2 hours",
-            AppointmentAnnouncementType.OneHour => $" in {(isAtHome ? null : "approximately")} 1 hour",
-            AppointmentAnnouncementType.ThirtyMinutes => $" in {(isAtHome ? null : "approximately")} 30 minutes",
-            AppointmentAnnouncementType.FifteenMinutes => $" in {(isAtHome ? null : "approximately")} 15 minutes",
-            AppointmentAnnouncementType.Now => $" right now",
-            _ => string.Empty,
+            120 => $" in {(isAtHome ? null : "approximately")} 2 hours",
+            90 => $" in {(isAtHome ? null : "approximately")} 1 and a half hours",
+            60 => $" in {(isAtHome ? null : "approximately")} 1 hour",
+            0 => $" right now",
+            _ => $" in {(isAtHome ? null : "approximately")} {reminder.NextAnnouncementType} minutes",
         };
 
         return reminderMessage;
@@ -118,7 +118,7 @@ internal static class AppointmentReminderEntityExtensions
 
     private static void SetNextAnnouncementDateTime(this AppointmentReminderEntity reminder)
     {
-        reminder.NextAnnouncement = reminder.NextAnnouncementType == AppointmentAnnouncementType.None
+        reminder.NextAnnouncement = reminder.NextAnnouncementType == -1
             ? null
             : reminder.GetLeaveDateTime()
                 .AddMinutes(-1 * (int?)reminder.NextAnnouncementType ?? 0);

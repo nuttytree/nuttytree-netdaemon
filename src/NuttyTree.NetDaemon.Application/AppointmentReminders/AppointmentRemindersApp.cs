@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Xml.Linq;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -19,7 +20,7 @@ using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentCon
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders;
 
 [NetDaemonApp]
-internal sealed class AppointmentRemindersAppV2 : IDisposable
+internal sealed class AppointmentRemindersApp : IDisposable
 {
     private readonly AppointmentRemindersOptions options;
 
@@ -37,7 +38,7 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
 
     private readonly CancellationToken applicationStopping;
 
-    private readonly ILogger<AppointmentRemindersAppV2> logger;
+    private readonly ILogger<AppointmentRemindersApp> logger;
 
     private readonly IDisposable appointmentUpdatesTask;
 
@@ -47,7 +48,7 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
 
     private TaskCompletionSource<AppointmentRemindersServiceType> serviceTrigger = new TaskCompletionSource<AppointmentRemindersServiceType>();
 
-    public AppointmentRemindersAppV2(
+    public AppointmentRemindersApp(
         IOptions<AppointmentRemindersOptions> options,
         ITaskScheduler taskScheduler,
         IServiceScopeFactory serviceScopeFactory,
@@ -57,7 +58,7 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
         IHaContext haContext,
         IServices homeAssistantServices,
         IHostApplicationLifetime applicationLifetime,
-        ILogger<AppointmentRemindersAppV2> logger)
+        ILogger<AppointmentRemindersApp> logger)
     {
         this.options = options.Value;
         this.taskScheduler = taskScheduler;
@@ -255,7 +256,7 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
                     await announcementsService.SendAnnouncementAsync(
                         reminderToAnnounce.GetReminderMessage(options),
                         AnnouncementType.Reminder,
-                        AnnouncementPriority.Information,
+                        reminderToAnnounce.Priority ? AnnouncementPriority.Critical : AnnouncementPriority.Information,
                         reminderToAnnounce.Type == ReminderType.Start ? reminderToAnnounce.Appointment.Person : null,
                         cancellationToken);
                 }
