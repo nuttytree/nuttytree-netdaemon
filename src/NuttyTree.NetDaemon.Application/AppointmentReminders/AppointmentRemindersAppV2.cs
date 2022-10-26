@@ -254,15 +254,10 @@ internal sealed class AppointmentRemindersAppV2 : IDisposable
 
                     await announcementsService.SendAnnouncementAsync(
                         reminderToAnnounce.GetReminderMessage(options),
+                        AnnouncementType.Reminder,
                         AnnouncementPriority.Information,
                         reminderToAnnounce.Type == ReminderType.Start ? reminderToAnnounce.Appointment.Person : null,
                         cancellationToken);
-
-                    //homeAssistantServices.Notify.MobileAppPhoneChris(new NotifyMobileAppPhoneChrisParameters
-                    //{
-                    //    Title = $"Test Appointment Reminder For: {(reminderToAnnounce.Type == ReminderType.Start ? reminderToAnnounce.Appointment.Person : null) ?? "Everyone"}",
-                    //    Message = reminderToAnnounce.GetReminderMessage(options),
-                    //});
                 }
 
                 reminderToAnnounce.UpdateNextAnnouncementTypeAndTime();

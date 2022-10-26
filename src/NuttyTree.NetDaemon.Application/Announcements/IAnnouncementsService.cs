@@ -8,7 +8,16 @@ public interface IAnnouncementsService
 
     void EnableAnnouncements();
 
-    void SendAnnouncement(string message, AnnouncementPriority priority = AnnouncementPriority.Information, string? person = null);
+    void SendAnnouncement(
+        string message,
+        AnnouncementType type = AnnouncementType.General,
+        AnnouncementPriority priority = AnnouncementPriority.Information,
+        string? person = null);
 
-    Task SendAnnouncementAsync(string message, AnnouncementPriority priority = AnnouncementPriority.Information, string? person = null, CancellationToken cancellationToken = default);
+    Task SendAnnouncementAsync(
+        string message,
+        AnnouncementType type = AnnouncementType.General,
+        AnnouncementPriority priority = AnnouncementPriority.Information,
+        string? person = null,
+        CancellationToken cancellationToken = default);
 }

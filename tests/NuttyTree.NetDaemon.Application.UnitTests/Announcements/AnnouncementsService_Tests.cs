@@ -11,13 +11,14 @@ using NetDaemon.HassModel.Entities;
 using NuttyTree.NetDaemon.Application.Announcements;
 using NuttyTree.NetDaemon.Application.Announcements.Models;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
+using NuttyTree.NetDaemon.Infrastructure.RateLimiting;
 using Xunit;
 
 namespace NuttyTree.NetDaemon.Application.UnitTests.Announcements;
 
 public class AnnouncementsService_Tests
 {
-    private readonly Faker faker = new Faker();
+    private readonly Faker faker = new ();
 
     private string testMessage;
 
@@ -25,7 +26,7 @@ public class AnnouncementsService_Tests
 
     private Mock<IHaContext> haContext;
 
-    private IAnnouncementsService announcementsService;
+    private AnnouncementsService announcementsService;
 
     [Fact]
     public async Task SendAnnouncement_AnnouncementIsSent()
@@ -112,7 +113,7 @@ public class AnnouncementsService_Tests
         Arrange(announcementsAreEnabled: false);
 
         // Act
-        await announcementsService.SendAnnouncementAsync(testMessage, AnnouncementPriority.Critical);
+        await announcementsService.SendAnnouncementAsync(testMessage, AnnouncementType.General, AnnouncementPriority.Critical);
 
         // Assert
         VerifyAnnouncementSent();
@@ -125,7 +126,7 @@ public class AnnouncementsService_Tests
         Arrange(announcementsAreEnabled: false);
 
         // Act
-        announcementsService.SendAnnouncement(testMessage, AnnouncementPriority.Warning);
+        announcementsService.SendAnnouncement(testMessage, AnnouncementType.General, AnnouncementPriority.Warning);
 
         // Assert
         await Task.Delay(500);
@@ -139,7 +140,7 @@ public class AnnouncementsService_Tests
         Arrange(announcementsAreEnabled: false);
 
         // Act
-        announcementsService.SendAnnouncement(testMessage, AnnouncementPriority.Warning);
+        announcementsService.SendAnnouncement(testMessage, AnnouncementType.General, AnnouncementPriority.Warning);
 
         // Assert
         await Task.Delay(500);
@@ -197,7 +198,8 @@ public class AnnouncementsService_Tests
 
         var hostApplicationLifetime = new Mock<IHostApplicationLifetime>();
 
-        announcementsService = new AnnouncementsService(hostApplicationLifetime.Object, Mock.Of<ILogger<AnnouncementsService>>());
+        announcementsService = new AnnouncementsService(hostApplicationLifetime.Object, Mock.Of<IRateLimiter<AnnouncementsService>>(), Mock.Of<ILogger<AnnouncementsService>>());
+        announcementsService.Initialize(entities, haContext.Object, haServices);
 
         if (!announcementsAreEnabled)
         {

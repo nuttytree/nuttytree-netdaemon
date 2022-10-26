@@ -7,6 +7,7 @@ using NuttyTree.NetDaemon.ExternalServices.RandomWords;
 using NuttyTree.NetDaemon.ExternalServices.Waze;
 using NuttyTree.NetDaemon.Infrastructure.Database;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
+using NuttyTree.NetDaemon.Infrastructure.RateLimiting;
 using NuttyTree.NetDaemon.Infrastructure.Scheduler;
 
 namespace NuttyTree.NetDaemon.Application;
@@ -31,6 +32,7 @@ public static class IServiceCollectionExtensions
         services
             .AddDatabase()
             .AddHomeAssistantEntitiesAndServices()
+            .AddRateLimiter()
             .AddTaskScheduler();
 
         return services;

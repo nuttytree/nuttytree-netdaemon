@@ -1,32 +1,33 @@
 ﻿using Microsoft.Extensions.Hosting;
 using NuttyTree.NetDaemon.Application.Announcements.Models;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
+using NuttyTree.NetDaemon.Infrastructure.RateLimiting;
 
 namespace NuttyTree.NetDaemon.Application.Announcements;
 
 internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncementsInternalService, IDisposable
 {
-    private static readonly List<string> InformationPrefixes = new List<string>
+    private static readonly List<string> ReminderPrefixes = new List<string>
     {
         "Just a friendly reminder",
         "Don't forget that",
         "Remember that",
     };
 
-    private static readonly List<string> WarningPrefixes = new List<string>
-    {
-        "Important reminder",
-    };
+    //private static readonly List<string> WarningPrefixes = new List<string>
+    //{
+    //    "Important reminder",
+    //};
 
-    private static readonly List<string> CriticalPrefixes = new List<string>
-    {
-        "Alert",
-        "Critical notice"
-    };
+    //private static readonly List<string> CriticalPrefixes = new List<string>
+    //{
+    //    "Alert",
+    //    "Critical notice"
+    //};
 
     private readonly SynchronizedCollection<Announcement> announcements = new SynchronizedCollection<Announcement>();
 
-    private readonly SemaphoreSlim rateLimiter = new SemaphoreSlim(1, 1);
+    private readonly IRateLimiter<AnnouncementsService> rateLimiter;
 
     private readonly ILogger<AnnouncementsService> logger;
 
@@ -44,13 +45,13 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
 
     private DateTime? disabledUntil;
 
-    private CancellationTokenSource? releaseRateLimiter;
-
     public AnnouncementsService(
         IHostApplicationLifetime applicationLifetime,
+        IRateLimiter<AnnouncementsService> rateLimiter,
         ILogger<AnnouncementsService> logger)
     {
         applicationStopping = applicationLifetime.ApplicationStopping;
+        this.rateLimiter = rateLimiter;
         this.logger = logger;
 
         _ = SendAnnouncementsAsync();
@@ -71,8 +72,9 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
             {
                 if (!string.IsNullOrWhiteSpace(r.message))
                 {
+                    Enum.TryParse<AnnouncementType>(r.type, true, out var type);
                     Enum.TryParse<AnnouncementPriority>(r.priority, true, out var priority);
-                    Send(r.message, priority, r.person);
+                    Send(r.message, type, priority, r.person);
                 }
             });
         haContext.RegisterServiceCallBack<DisableRequest>(
@@ -113,24 +115,24 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
 
     public void SendAnnouncement(
         string message,
+        AnnouncementType type = AnnouncementType.General,
         AnnouncementPriority priority = AnnouncementPriority.Information,
         string? person = null)
-            => Send(message, priority, person);
+            => Send(message, type, priority, person);
 
     public async Task SendAnnouncementAsync(
         string message,
+        AnnouncementType type = AnnouncementType.General,
         AnnouncementPriority priority = AnnouncementPriority.Information,
         string? person = null,
         CancellationToken cancellationToken = default)
     {
-        await Send(message, priority, person)
+        await Send(message, type, priority, person)
             .IsComplete.Task.WaitAsync(cancellationToken);
     }
 
     public void Dispose()
     {
-        rateLimiter?.Dispose();
-        releaseRateLimiter?.Dispose();
         delayedAnnouncementDue?.Dispose();
     }
 
@@ -150,10 +152,11 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
 
     private Announcement Send(
         string message,
+        AnnouncementType type,
         AnnouncementPriority priority,
         string? person)
     {
-        var announcement = new Announcement(message, priority, person);
+        var announcement = new Announcement(message, type, priority, person);
         announcements.Add(announcement);
         nextAnnouncementAvailable.TrySetResult();
         return announcement;
@@ -179,16 +182,15 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
                         .FirstOrDefault();
                     if (nextAnnouncement != null)
                     {
+                        await rateLimiter.WaitAsync(applicationStopping);
                         if (disabledUntil == null || nextAnnouncement.Priority == AnnouncementPriority.Critical)
                         {
                             if (nextAnnouncement.Person == null
                                 || haContext?.Entity($"person.{nextAnnouncement.Person.ToLowerInvariant()}").State.CaseInsensitiveEquals("home") == true)
                             {
-                                var message = nextAnnouncement.Priority switch
+                                var message = nextAnnouncement.Type switch
                                 {
-                                    AnnouncementPriority.Information => InformationPrefixes.PickRandom(),
-                                    AnnouncementPriority.Warning => WarningPrefixes.PickRandom(),
-                                    AnnouncementPriority.Critical => CriticalPrefixes.PickRandom(),
+                                    AnnouncementType.Reminder => ReminderPrefixes.PickRandom(),
                                     _ => string.Empty,
                                 };
                                 message += $", {nextAnnouncement.Message}";
@@ -209,23 +211,6 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
             {
                 logger.LogWarning(ex, "Exception in the in the {Method} loop", nameof(SendAnnouncementsAsync));
             }
-        }
-    }
-
-    private async Task<T> RateLimitAnnouncementsAsync<T>(Func<Task<T>> request)
-    {
-        try
-        {
-            await rateLimiter.WaitAsync();
-            return await request();
-        }
-        finally
-        {
-            releaseRateLimiter = new CancellationTokenSource(60000);
-            releaseRateLimiter.Token.Register(() =>
-            {
-                rateLimiter.Release();
-            });
         }
     }
 }

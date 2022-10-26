@@ -4,10 +4,12 @@ internal sealed class Announcement
 {
     public Announcement(
         string message,
+        AnnouncementType type,
         AnnouncementPriority priority,
         string? person)
     {
         Message = message;
+        Type = type;
         Priority = priority;
         Person = person;
     }
@@ -17,6 +19,8 @@ internal sealed class Announcement
     public TaskCompletionSource IsComplete { get; } = new TaskCompletionSource();
 
     public string Message { get; }
+
+    public AnnouncementType Type { get; }
 
     public AnnouncementPriority Priority { get; }
 
