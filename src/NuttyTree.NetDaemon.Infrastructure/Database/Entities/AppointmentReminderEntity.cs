@@ -16,7 +16,7 @@ public sealed class AppointmentReminderEntity
 
     public string? AnnouncementTypes { get; set; }
 
-    public AnnouncementType? NextAnnouncementType { get; set; }
+    public AppointmentAnnouncementType? NextAnnouncementType { get; set; }
 
     public DateTime? NextAnnouncement { get; set; }
 

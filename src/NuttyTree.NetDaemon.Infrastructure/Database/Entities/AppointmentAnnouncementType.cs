@@ -1,6 +1,6 @@
 ﻿namespace NuttyTree.NetDaemon.Infrastructure.Database.Entities;
 
-public enum AnnouncementType
+public enum AppointmentAnnouncementType
 {
     None = -1,
     Now = 0,

@@ -122,7 +122,7 @@ internal static class AppointmentEntityExtensions
             startReminder.ArriveLeadMinutes ??= 0;
         }
 
-        startReminder.SetDefaultAnnouncementTypes(AnnouncementType.TwoHours, AnnouncementType.OneHour, AnnouncementType.ThirtyMinutes, AnnouncementType.FifteenMinutes, AnnouncementType.Now);
+        startReminder.SetDefaultAnnouncementTypes(AppointmentAnnouncementType.TwoHours, AppointmentAnnouncementType.OneHour, AppointmentAnnouncementType.ThirtyMinutes, AppointmentAnnouncementType.FifteenMinutes, AppointmentAnnouncementType.Now);
         startReminder.ArriveLeadMinutes ??= options.DefaultStartLeadMinutes;
         endReminder.SetDefaultAnnouncementTypes();
         endReminder.ArriveLeadMinutes ??= options.DefaultEndLeadMinutes;
@@ -159,8 +159,8 @@ internal static class AppointmentEntityExtensions
         startReminder.SetNextAnnouncementType();
         endReminder.SetNextAnnouncementType();
 
-        startReminder.NextTravelTimeUpdate = startReminder.NextAnnouncementType == AnnouncementType.None ? null : DateTime.MinValue;
-        endReminder.NextTravelTimeUpdate = endReminder.NextAnnouncementType == AnnouncementType.None ? null : DateTime.MinValue;
+        startReminder.NextTravelTimeUpdate = startReminder.NextAnnouncementType == AppointmentAnnouncementType.None ? null : DateTime.MinValue;
+        endReminder.NextTravelTimeUpdate = endReminder.NextAnnouncementType == AppointmentAnnouncementType.None ? null : DateTime.MinValue;
     }
 
     public static AppointmentReminderEntity GetStartReminder(this AppointmentEntity appointment)
