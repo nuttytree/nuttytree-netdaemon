@@ -1,4 +1,5 @@
-﻿using NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
+﻿using System.Diagnostics.CodeAnalysis;
+using NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
 using NuttyTree.NetDaemon.ExternalServices.HomeAssistantCalendar.Models;
 using NuttyTree.NetDaemon.ExternalServices.Waze.Models;
 using NuttyTree.NetDaemon.Infrastructure.Database.Entities;
@@ -13,21 +14,44 @@ internal static class AppointmentEntityExtensions
                 .Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
                 .Select(l => l.Split(':', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
                 .Where(sl => sl.Length == 2)
-                .Select(sl => KeyValuePair.Create(sl[0], sl[1]))
-                .FirstOrDefault(kv => kv.Key.CaseInsensitiveEquals(valueName))
-                .Value;
+                .FirstOrDefault(sl => sl[0].CaseInsensitiveEquals(valueName))?
+                .Last();
     }
 
-    public static bool TryGetOverrideValue(this AppointmentEntity appointment, string valueName, out string? value)
+    public static bool TryGetOverrideValue(this AppointmentEntity appointment, string valueName, [MaybeNullWhen(false)] out string value)
     {
-        value = appointment.Description?
-            .Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .Select(l => l.Split(':', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
-            .Where(sl => sl.Length == 2)
-            .Select(sl => KeyValuePair.Create(sl[0], sl[1]))
-            .FirstOrDefault(kv => kv.Key.CaseInsensitiveEquals(valueName))
-            .Value;
+        value = GetOverrideValue(appointment, valueName);
         return value != null;
+    }
+
+    public static bool? GetBoolOverrideValue(this AppointmentEntity appointment, string valueName)
+    {
+        var stringValue = appointment.GetOverrideValue(valueName);
+        return stringValue == null ? null : stringValue.CaseInsensitiveEquals("true") || stringValue.CaseInsensitiveEquals("yes");
+    }
+
+    public static bool TryGetBoolOverrideValue(this AppointmentEntity appointment, string valueName, out bool value)
+    {
+        var maybeValue = appointment.GetBoolOverrideValue(valueName);
+        value = maybeValue ?? false;
+        return maybeValue != null;
+    }
+
+    public static int? GetIntOverrideValue(this AppointmentEntity appointment, string valueName)
+    {
+        var stringValue = appointment.GetOverrideValue(valueName);
+        return stringValue == null
+            ? null
+            : int.TryParse(stringValue, out var intValue)
+                ? intValue
+                : null;
+    }
+
+    public static bool TryGetIntOverrideValue(this AppointmentEntity appointment, string valueName, out int value)
+    {
+        var maybeValue = appointment.GetIntOverrideValue(valueName);
+        value = maybeValue ?? 0;
+        return maybeValue != null;
     }
 
     public static bool HasChanged(this AppointmentEntity existing, HomeAssistantAppointment updated)
@@ -53,7 +77,7 @@ internal static class AppointmentEntityExtensions
     {
         appointment.Person = (appointment.Calendar == FamilyCalendar ? appointment.GetOverrideValue(nameof(appointment.Person)) : null) ?? appointment.Person;
         appointment.Person ??= appointment.Calendar == ScoutsCalendar ? Mayson : null;
-        appointment.Person ??= appointment.Calendar == FamilyCalendar && appointment.Summary.StartsWith("chris' ", StringComparison.OrdinalIgnoreCase) ? Chris : null;
+        appointment.Person ??= appointment.Calendar == FamilyCalendar && appointment.Summary.StartsWith("chris'", StringComparison.OrdinalIgnoreCase) ? Chris : null;
         appointment.Person ??= appointment.Calendar == FamilyCalendar && appointment.Summary.StartsWith("melissa's ", StringComparison.OrdinalIgnoreCase) ? Melissa : null;
         appointment.Person ??= appointment.Calendar == FamilyCalendar && appointment.Summary.StartsWith("mayson's ", StringComparison.OrdinalIgnoreCase) ? Mayson : null;
     }
@@ -122,7 +146,7 @@ internal static class AppointmentEntityExtensions
             startReminder.ArriveLeadMinutes ??= 0;
         }
 
-        startReminder.SetDefaultAnnouncementTypes(AppointmentAnnouncementType.TwoHours, AppointmentAnnouncementType.OneHour, AppointmentAnnouncementType.ThirtyMinutes, AppointmentAnnouncementType.FifteenMinutes, AppointmentAnnouncementType.Now);
+        startReminder.SetDefaultAnnouncementTypes(120, 60, 30, 15, 0);
         startReminder.ArriveLeadMinutes ??= options.DefaultStartLeadMinutes;
         endReminder.SetDefaultAnnouncementTypes();
         endReminder.ArriveLeadMinutes ??= options.DefaultEndLeadMinutes;
@@ -134,9 +158,14 @@ internal static class AppointmentEntityExtensions
                 startReminder.AnnouncementTypes = reminders;
             }
 
-            if (appointment.TryGetOverrideValue("LeadTime", out var leadTimeString) && int.TryParse(leadTimeString, out var leadTime))
+            if (appointment.TryGetIntOverrideValue("LeadTime", out var leadTime))
             {
                 startReminder.ArriveLeadMinutes = leadTime;
+            }
+
+            if (appointment.TryGetBoolOverrideValue("Priority", out var priority))
+            {
+                startReminder.Priority = priority;
             }
 
             if (appointment.TryGetOverrideValue("EndReminders", out var endReminders))
@@ -144,9 +173,14 @@ internal static class AppointmentEntityExtensions
                 endReminder.AnnouncementTypes = endReminders;
             }
 
-            if (appointment.TryGetOverrideValue("EndLeadTime", out var endLeadTimeString) && int.TryParse(endLeadTimeString, out var endLeadTime))
+            if (appointment.TryGetIntOverrideValue("EndLeadTime", out var endLeadTime))
             {
                 endReminder.ArriveLeadMinutes = endLeadTime;
+            }
+
+            if (appointment.TryGetBoolOverrideValue("EndPriority", out var endPriority))
+            {
+                endReminder.Priority = endPriority;
             }
         }
 
@@ -159,8 +193,8 @@ internal static class AppointmentEntityExtensions
         startReminder.SetNextAnnouncementType();
         endReminder.SetNextAnnouncementType();
 
-        startReminder.NextTravelTimeUpdate = startReminder.NextAnnouncementType == AppointmentAnnouncementType.None ? null : DateTime.MinValue;
-        endReminder.NextTravelTimeUpdate = endReminder.NextAnnouncementType == AppointmentAnnouncementType.None ? null : DateTime.MinValue;
+        startReminder.NextTravelTimeUpdate = startReminder.NextAnnouncementType == -1 ? null : DateTime.MinValue;
+        endReminder.NextTravelTimeUpdate = endReminder.NextAnnouncementType == -1 ? null : DateTime.MinValue;
     }
 
     public static AppointmentReminderEntity GetStartReminder(this AppointmentEntity appointment)

@@ -41,6 +41,7 @@ namespace NuttyTree.NetDaemon.Infrastructure.Database.Migrations
                     NextAnnouncementType = table.Column<int>(type: "INTEGER", nullable: true),
                     NextAnnouncement = table.Column<DateTime>(type: "TEXT", nullable: true),
                     LastAnnouncement = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Priority = table.Column<bool>(type: "INTEGER", nullable: false),
                     TravelMiles = table.Column<double>(type: "REAL", nullable: true),
                     TravelMinutes = table.Column<double>(type: "REAL", nullable: true),
                     NextTravelTimeUpdate = table.Column<DateTime>(type: "TEXT", nullable: true),

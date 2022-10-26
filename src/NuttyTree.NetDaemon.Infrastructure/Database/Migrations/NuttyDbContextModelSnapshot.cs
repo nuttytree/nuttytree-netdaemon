@@ -74,13 +74,16 @@ namespace NuttyTree.NetDaemon.Infrastructure.Database.Migrations
                     b.Property<string>("AnnouncementTypes")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("LastAnnouncement")
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime?>("NextAnnouncement")
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("NextAnnouncementType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("LastAnnouncement")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Priority")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("NextTravelTimeUpdate")

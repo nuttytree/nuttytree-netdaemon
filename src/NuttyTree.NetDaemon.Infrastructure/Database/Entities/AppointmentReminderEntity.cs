@@ -16,11 +16,13 @@ public sealed class AppointmentReminderEntity
 
     public string? AnnouncementTypes { get; set; }
 
-    public AppointmentAnnouncementType? NextAnnouncementType { get; set; }
+    public int? NextAnnouncementType { get; set; }
 
     public DateTime? NextAnnouncement { get; set; }
 
     public DateTime? LastAnnouncement { get; set; }
+
+    public bool Priority { get; set; }
 
     public double? TravelMiles { get; set; }
 
