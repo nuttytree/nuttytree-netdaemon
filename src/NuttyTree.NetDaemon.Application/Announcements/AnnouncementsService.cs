@@ -190,10 +190,10 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
                             {
                                 var message = nextAnnouncement.Type switch
                                 {
-                                    AnnouncementType.Reminder => ReminderPrefixes.PickRandom(),
+                                    AnnouncementType.Reminder => $"{ReminderPrefixes.PickRandom()}, ",
                                     _ => string.Empty,
                                 };
-                                message += $", {nextAnnouncement.Message}";
+                                message += nextAnnouncement.Message;
                                 homeAssistantServices?.Notify.AlexaMediaDevicesInside(new NotifyAlexaMediaDevicesInsideParameters
                                 {
                                     Data = new { type = "announce" },

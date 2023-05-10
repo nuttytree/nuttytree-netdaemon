@@ -24,8 +24,7 @@ public sealed class HomeAssistantAppointment
     {
         if (id == null)
         {
-            using var sha256 = SHA256.Create();
-            var data = sha256.ComputeHash(Encoding.UTF8.GetBytes($"{Summary}.{Location}.{Start?.DateTime ?? Start?.Date}")).ToList();
+            var data = SHA256.HashData(Encoding.UTF8.GetBytes($"{Summary}.{Location}.{Start?.DateTime ?? Start?.Date}")).ToList();
             var stringBuilder = new StringBuilder();
             data.ForEach(b => stringBuilder.Append(b.ToString("x2", CultureInfo.InvariantCulture)));
             id = stringBuilder.ToString();
