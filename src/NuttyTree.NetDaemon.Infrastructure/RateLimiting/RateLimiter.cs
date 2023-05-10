@@ -31,7 +31,7 @@ internal sealed class RateLimiter<T> : IDisposable, IRateLimiter<T>
         }
     }
 
-    private class InternalRateLimiter : IDisposable
+    private sealed class InternalRateLimiter : IDisposable
     {
         private readonly SemaphoreSlim semaphore = new (1, 1);
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using System.Globalization;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 
@@ -14,7 +15,7 @@ public static class IHostBuilderExtensions
             config.MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning);
             config.WriteTo.Async(sinkConfig =>
             {
-                sinkConfig.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3} {SourceContext}] {Message:lj}{NewLine}{Exception}");
+                sinkConfig.Console(formatProvider: CultureInfo.CurrentCulture);
             });
         });
     }

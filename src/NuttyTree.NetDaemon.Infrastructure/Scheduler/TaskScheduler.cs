@@ -64,7 +64,7 @@ internal sealed class TaskScheduler : ITaskScheduler
         }
     }
 
-    private class TriggerableTask : ITriggerableTask
+    private sealed class TriggerableTask : ITriggerableTask
     {
         private readonly CancellationTokenSource stopRequested = new CancellationTokenSource();
 

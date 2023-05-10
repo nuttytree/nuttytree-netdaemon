@@ -1,5 +1,4 @@
-﻿using System.Xml.Linq;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -97,7 +96,8 @@ internal sealed class AppointmentRemindersApp : IDisposable
             {
                 var homeAssistantAppointments = (await homeAssistantCalendar
                     .GetAppointmentsAsync(calendar, DateTime.Now.AddHours(-1), DateTime.Now.AddDays(30), cancellationToken))
-                    .Where(a => !string.IsNullOrWhiteSpace(a.Location));
+                    .Where(a => !string.IsNullOrWhiteSpace(a.Location))
+                    .ToList();
                 var appointments = await dbContext.Appointments
                     .Where(a => a.Calendar == calendar)
                     .Include(a => a.Reminders)
