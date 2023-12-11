@@ -44,5 +44,5 @@ public sealed class AppointmentEntity
 
     public double? Longitude { get; set; }
 
-    public List<AppointmentReminderEntity> Reminders { get; set; } = new List<AppointmentReminderEntity>();
+    public ICollection<AppointmentReminderEntity> Reminders { get; set; } = new List<AppointmentReminderEntity>();
 }
