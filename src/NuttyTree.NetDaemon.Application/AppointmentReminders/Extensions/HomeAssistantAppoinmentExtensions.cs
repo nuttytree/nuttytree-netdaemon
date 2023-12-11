@@ -4,13 +4,13 @@ using NuttyTree.NetDaemon.Infrastructure.Database.Entities;
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Extensions;
 
-internal static class HomeAssistantAppoinmentExtensions
+internal static partial class HomeAssistantAppoinmentExtensions
 {
-    private static readonly Regex TagWhiteSpaceRegex = new (@"(>|$)(\W|\n|\r)+<", RegexOptions.Multiline);
+    private static readonly Regex TagWhiteSpaceRegex = GetTagWhiteSpaceRegex();
 
-    private static readonly Regex LineBreakRegex = new (@"<(br|BR)\s{0,1}\/{0,1}>", RegexOptions.Multiline);
+    private static readonly Regex LineBreakRegex = GetLineBreakRegex();
 
-    private static readonly Regex StripFormattingRegex = new (@"<[^>]*(>|$)", RegexOptions.Multiline);
+    private static readonly Regex StripFormattingRegex = GetStripFormattingRegex();
 
     public static DateTime GetStartDateTime(this HomeAssistantAppointment appointment)
         => (appointment.Start?.DateTime ?? appointment.Start?.Date ?? DateTime.MinValue).ToUniversalTime();
@@ -49,4 +49,13 @@ internal static class HomeAssistantAppoinmentExtensions
         text = StripFormattingRegex.Replace(text, string.Empty);
         return text;
     }
+
+    [GeneratedRegex(@"(>|$)(\W|\n|\r)+<", RegexOptions.Multiline)]
+    private static partial Regex GetTagWhiteSpaceRegex();
+
+    [GeneratedRegex(@"<(br|BR)\s{0,1}\/{0,1}>", RegexOptions.Multiline)]
+    private static partial Regex GetLineBreakRegex();
+
+    [GeneratedRegex(@"<[^>]*(>|$)", RegexOptions.Multiline)]
+    private static partial Regex GetStripFormattingRegex();
 }

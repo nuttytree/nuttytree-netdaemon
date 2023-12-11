@@ -8,17 +8,17 @@
 
   <ItemGroup>
     <PackageReference Include="FluentDateTime" Version="2.1.0" />
-    <PackageReference Include="JoySoftware.NetDaemon.AppModel" Version="23.15.0" />
-    <PackageReference Include="JoySoftware.NetDaemon.Runtime" Version="23.15.0" />
-    <PackageReference Include="JoySoftware.NetDaemon.Client" Version="23.15.0" />
-    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Scheduling" Version="23.15.0" />
-    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Logging" Version="23.15.0" />
-    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Tts" Version="23.15.0" />
-    <PackageReference Include="Net.Codecrete.QrCodeGenerator" Version="2.0.3" />
-    <PackageReference Include="System.IO.Abstractions" Version="17.2.3" />
-    <PackageReference Include="System.Reactive" Version="5.0.0" />
-    <PackageReference Include="System.ServiceModel.Primitives" Version="4.10.2" />
-    <PackageReference Include="YamlDotNet" Version="13.1.0" />
+    <PackageReference Include="JoySoftware.NetDaemon.AppModel" Version="23.44.1" />
+    <PackageReference Include="JoySoftware.NetDaemon.Runtime" Version="23.44.1" />
+    <PackageReference Include="JoySoftware.NetDaemon.Client" Version="23.44.1" />
+    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Scheduling" Version="23.44.1" />
+    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Logging" Version="23.44.1" />
+    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Tts" Version="23.44.1" />
+    <PackageReference Include="Net.Codecrete.QrCodeGenerator" Version="2.0.4" />
+    <PackageReference Include="System.IO.Abstractions" Version="20.0.4" />
+    <PackageReference Include="System.Reactive" Version="6.0.0" />
+    <PackageReference Include="System.ServiceModel.Primitives" Version="6.2.0" />
+    <PackageReference Include="YamlDotNet" Version="13.7.1" />
   </ItemGroup>
 
   <ItemGroup>

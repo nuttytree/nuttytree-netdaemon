@@ -75,24 +75,43 @@ internal static class AppointmentEntityExtensions
 
     public static void SetAppointmentPerson(this AppointmentEntity appointment)
     {
-        appointment.Person = (appointment.Calendar == FamilyCalendar ? appointment.GetOverrideValue(nameof(appointment.Person)) : null) ?? appointment.Person;
-        appointment.Person ??= appointment.Calendar == ScoutsCalendar ? Mayson : null;
-        appointment.Person ??= appointment.Calendar == FamilyCalendar && appointment.Summary.StartsWith("chris'", StringComparison.OrdinalIgnoreCase) ? Chris : null;
-        appointment.Person ??= appointment.Calendar == FamilyCalendar && appointment.Summary.StartsWith("melissa's ", StringComparison.OrdinalIgnoreCase) ? Melissa : null;
-        appointment.Person ??= appointment.Calendar == FamilyCalendar && appointment.Summary.StartsWith("mayson's ", StringComparison.OrdinalIgnoreCase) ? Mayson : null;
+        if (appointment.Calendar == ScoutsCalendar)
+        {
+            appointment.Person = Mayson;
+        }
+        else if (appointment.TryGetOverrideValue(nameof(appointment.Person), out var person))
+        {
+            appointment.Person = person;
+        }
+        else if (appointment.Summary.StartsWith("chris'", StringComparison.OrdinalIgnoreCase))
+        {
+            appointment.Person = Chris;
+            appointment.Summary = appointment.Summary.Replace("chris'", "his", StringComparison.OrdinalIgnoreCase);
+        }
+        else if (appointment.Summary.StartsWith("melissa's ", StringComparison.OrdinalIgnoreCase))
+        {
+            appointment.Person = Chris;
+            appointment.Summary = appointment.Summary.Replace("melissa's", "her", StringComparison.OrdinalIgnoreCase);
+        }
+        else if (appointment.Summary.StartsWith("mayson's ", StringComparison.OrdinalIgnoreCase))
+        {
+            appointment.Person = Chris;
+            appointment.Summary = appointment.Summary.Replace("mayson's", "his", StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     public static LocationCoordinates? GetKnownLocationCoordinates(this AppointmentEntity appointment, AppointmentRemindersOptions options)
     {
         if (appointment.Calendar == FamilyCalendar &&
-            (appointment.Location!.Replace(" ", string.Empty, StringComparison.Ordinal)?
-                .Contains(options.HomeAddress!.Replace(" ", string.Empty, StringComparison.Ordinal), StringComparison.OrdinalIgnoreCase) == true
+            (appointment.Location!.Replace(" ", string.Empty, StringComparison.Ordinal)
+                !.Contains(options.HomeAddress!.Replace(" ", string.Empty, StringComparison.Ordinal), StringComparison.OrdinalIgnoreCase)
                     || string.Equals(appointment.Location, "Home", StringComparison.OrdinalIgnoreCase)))
         {
             return options.HomeLocation;
         }
         else if (appointment.Calendar == FamilyCalendar &&
-            appointment.Location!.Replace(" ", string.Empty, StringComparison.Ordinal)?.Contains("RidgewoodChurch", StringComparison.OrdinalIgnoreCase) == true)
+            appointment.Location!.Replace(" ", string.Empty, StringComparison.Ordinal)
+                !.Contains("RidgewoodChurch", StringComparison.OrdinalIgnoreCase))
         {
             return RidgewoodChurchLocation;
         }
