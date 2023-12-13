@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using NuttyTree.NetDaemon.Application.Announcements;
 using NuttyTree.NetDaemon.Application.AppointmentReminders;
+using NuttyTree.NetDaemon.ExternalServices.Frigate;
 using NuttyTree.NetDaemon.ExternalServices.HomeAssistantCalendar;
 using NuttyTree.NetDaemon.ExternalServices.RandomWords;
 using NuttyTree.NetDaemon.ExternalServices.Waze;
@@ -26,7 +27,8 @@ public static class IServiceCollectionExtensions
         services
             .AddHomeAssistantCalendar()
             .AddRandomWords()
-            .AddWaze();
+            .AddWaze()
+            .AddFrigate();
 
         // Infrastructure
         services
