@@ -12,14 +12,14 @@ public static class IServiceColectionExtensions
     {
         services.AddRefitClient<IHomeAssistantCalendarApi>()
             .AddDefaultRetryPolicy()
-        .ConfigureHttpClient((serviceProvider, client) =>
-        {
-            var settings = serviceProvider.GetRequiredService<IOptions<HomeAssistantSettings>>().Value;
-            client.BaseAddress = new UriBuilder(settings.Ssl ? "https" : "http", settings.Host, settings.Port).Uri;
-            client.DefaultRequestHeaders.Clear();
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", settings.Token);
-        });
+            .ConfigureHttpClient((serviceProvider, client) =>
+            {
+                var settings = serviceProvider.GetRequiredService<IOptions<HomeAssistantSettings>>().Value;
+                client.BaseAddress = new UriBuilder(settings.Ssl ? "https" : "http", settings.Host, settings.Port).Uri;
+                client.DefaultRequestHeaders.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", settings.Token);
+            });
 
         return services;
     }
