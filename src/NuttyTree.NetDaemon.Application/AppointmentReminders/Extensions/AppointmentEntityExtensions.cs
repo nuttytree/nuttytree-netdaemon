@@ -90,12 +90,12 @@ internal static class AppointmentEntityExtensions
         }
         else if (appointment.Summary.StartsWith("melissa's ", StringComparison.OrdinalIgnoreCase))
         {
-            appointment.Person = Chris;
+            appointment.Person = Melissa;
             appointment.Summary = appointment.Summary.Replace("melissa's", "her", StringComparison.OrdinalIgnoreCase);
         }
         else if (appointment.Summary.StartsWith("mayson's ", StringComparison.OrdinalIgnoreCase))
         {
-            appointment.Person = Chris;
+            appointment.Person = Mayson;
             appointment.Summary = appointment.Summary.Replace("mayson's", "his", StringComparison.OrdinalIgnoreCase);
         }
     }
