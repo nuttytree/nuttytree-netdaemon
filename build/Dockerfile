@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS builder
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS builder
 
 ARG HOMEASSISTANT__HOST
 ARG HOMEASSISTANT__PORT
@@ -20,7 +20,7 @@ FROM builder AS publisher
 RUN dotnet publish --no-build --self-contained false -c Release -o out ./src/NuttyTree.NetDaemon/NuttyTree.NetDaemon.csproj
 
 
-FROM mcr.microsoft.com/dotnet/aspnet:7.0
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 
 WORKDIR /app
 

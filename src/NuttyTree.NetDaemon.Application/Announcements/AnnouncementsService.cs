@@ -109,7 +109,7 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
         delayedAnnouncementDue?.Dispose();
         disabledUntil = null;
         nextAnnouncementAvailable.TrySetResult();
-        logger.LogInformation("Announcements enabled", disabledUntil);
+        logger.LogInformation("Announcements enabled");
         haContext?.SetEntityState("binary_sensor.announcments_enabled", "on", new { });
     }
 

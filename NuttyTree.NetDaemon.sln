@@ -9,6 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{1E435BC4
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{08A2828C-5FD1-4917-B92E-A65EB0BC182C}"
 	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
 		build\Dockerfile = build\Dockerfile
 	EndProjectSection
 EndProject
@@ -18,7 +19,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuttyTree.NetDaemon.Infrast
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuttyTree.NetDaemon.Application", "src\NuttyTree.NetDaemon.Application\NuttyTree.NetDaemon.Application.csproj", "{B143BED0-0F18-4357-804D-0BCFAA098587}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuttyTree.NetDaemon.Application.UnitTests", "tests\NuttyTree.NetDaemon.Application.UnitTests\NuttyTree.NetDaemon.Application.UnitTests.csproj", "{0E474832-416B-4AE8-84F0-C2535E01C731}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NuttyTree.NetDaemon.Application.UnitTests", "tests\NuttyTree.NetDaemon.Application.UnitTests\NuttyTree.NetDaemon.Application.UnitTests.csproj", "{0E474832-416B-4AE8-84F0-C2535E01C731}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

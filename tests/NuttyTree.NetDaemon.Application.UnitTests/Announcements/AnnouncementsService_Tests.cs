@@ -126,7 +126,9 @@ public class AnnouncementsService_Tests
         Arrange(announcementsAreEnabled: false);
 
         // Act
+#pragma warning disable CA1849 // Call async methods when in an async method
         announcementsService.SendAnnouncement(testMessage, AnnouncementType.General, AnnouncementPriority.Warning);
+#pragma warning restore CA1849 // Call async methods when in an async method
 
         // Assert
         await Task.Delay(500);
@@ -140,7 +142,9 @@ public class AnnouncementsService_Tests
         Arrange(announcementsAreEnabled: false);
 
         // Act
+#pragma warning disable CA1849 // Call async methods when in an async method
         announcementsService.SendAnnouncement(testMessage, AnnouncementType.General, AnnouncementPriority.Warning);
+#pragma warning restore CA1849 // Call async methods when in an async method
 
         // Assert
         await Task.Delay(500);
