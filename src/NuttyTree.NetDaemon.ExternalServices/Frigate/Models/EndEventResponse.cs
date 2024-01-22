@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace NuttyTree.NetDaemon.ExternalServices.Frigate.Models;
+﻿namespace NuttyTree.NetDaemon.ExternalServices.Frigate.Models;
 
 public sealed class EndEventResponse
 {

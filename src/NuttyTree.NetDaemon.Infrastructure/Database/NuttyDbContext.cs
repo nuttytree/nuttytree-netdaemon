@@ -15,6 +15,8 @@ public class NuttyDbContext : DbContext
 
     public virtual DbSet<AppointmentReminderEntity> AppointmentReminders { get; set; } = null!;
 
+    public virtual DbSet<ToDoListItemEntity> ToDoListItems { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
@@ -45,6 +47,11 @@ public class NuttyDbContext : DbContext
             entity.HasMany(e => e.Reminders)
                 .WithOne(r => r.Appointment)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ToDoListItemEntity>(entity =>
+        {
+            entity.HasAlternateKey(e => e.Uid);
         });
     }
 }

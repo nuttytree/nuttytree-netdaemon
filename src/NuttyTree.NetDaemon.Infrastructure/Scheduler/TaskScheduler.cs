@@ -32,6 +32,13 @@ internal sealed class TaskScheduler : ITaskScheduler
         return task;
     }
 
+    public IDisposable CreateSelfSchedulingTask(Func<CancellationToken, Task<DateTime>> action, TimeSpan onExceptionRetryIn)
+    {
+        var task = new TriggerableTask();
+        _ = RunTaskAsync(async c => await action(c) - DateTime.UtcNow, onExceptionRetryIn, task);
+        return task;
+    }
+
     public ITriggerableTask CreateTriggerableSelfSchedulingTask(Func<CancellationToken, Task<TimeSpan>> action, TimeSpan onExceptionRetryIn)
     {
         var task = new TriggerableTask();
