@@ -9,4 +9,6 @@ public interface ITaskScheduler
     IDisposable CreateSelfSchedulingTask(Func<CancellationToken, Task<DateTime>> action, TimeSpan onExceptionRetryIn);
 
     ITriggerableTask CreateTriggerableSelfSchedulingTask(Func<CancellationToken, Task<TimeSpan>> action, TimeSpan onExceptionRetryIn);
+
+    ITriggerableTask CreateTriggerableSelfSchedulingTask(Func<CancellationToken, Task<DateTime>> action, TimeSpan onExceptionRetryIn);
 }

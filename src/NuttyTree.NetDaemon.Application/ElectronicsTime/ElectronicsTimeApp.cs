@@ -15,14 +15,17 @@ internal sealed class ElectronicsTimeApp : IDisposable
 {
     private static readonly IReadOnlyList<RecurringToDoListItem> RecurringToDoListItems = new List<RecurringToDoListItem>
     {
-        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Get Dressed", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(6), MinutesEarned = 3 },
-        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Take Medicine", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(6), MinutesEarned = 3 },
-        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Prepare Breakfast", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(6), MinutesEarned = 3 },
-        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Put Breakfast Food Away", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(6), MinutesEarned = 3 },
-        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Put Dishes in the Dishwasher", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(6), MinutesEarned = 3 },
-        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Cleanup from Breakfast", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(6), MinutesEarned = 3 },
-        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Brush Teeth", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(6), MinutesEarned = 3 },
-        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Clean Up Bathroom", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(6), MinutesEarned = 3 },
+        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Get Dressed", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(8), MinutesEarned = 3 },
+        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Take Medicine", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(8), MinutesEarned = 3 },
+        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Prepare Breakfast", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(8), MinutesEarned = 3 },
+        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Put Breakfast Food Away", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(8), MinutesEarned = 3 },
+        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Put Dishes in the Dishwasher", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(8), MinutesEarned = 3 },
+        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Cleanup from Breakfast", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(8), MinutesEarned = 3 },
+        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Brush Teeth", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(8), MinutesEarned = 3 },
+        new () { RecurringToDoListItemType = RecurringToDoListItemType.Daily, Name = "Clean Up Bathroom", StartAt = new TimeOnly(4, 0), ExpiresAfter = TimeSpan.FromHours(8), MinutesEarned = 3 },
+        new () { RecurringToDoListItemType = RecurringToDoListItemType.Weekly, Name = "Water Plants", WeeklyDayOfWeek = DayOfWeek.Saturday, StartAt = new TimeOnly(4, 0) },
+        new () { RecurringToDoListItemType = RecurringToDoListItemType.Weekly, Name = "Empty Trash Around House", WeeklyDayOfWeek = DayOfWeek.Saturday, StartAt = new TimeOnly(4, 0) },
+        new () { RecurringToDoListItemType = RecurringToDoListItemType.EveryXDays, Name = "Clean Cat Litter Boxes", DaysBetween = 3, StartAt = new TimeOnly(4, 0) },
         new () { RecurringToDoListItemType = RecurringToDoListItemType.Triggered, Name = "Empty Dishwasher", TriggerSensor = "binary_sensor.dish_washer", TriggerFromState = "on", TriggerToState = "off", ExpiresAfter = TimeSpan.FromHours(6), MinutesEarned = 20 },
     };
 
@@ -33,6 +36,8 @@ internal sealed class ElectronicsTimeApp : IDisposable
     private readonly TodoEntity maysonsToDoList;
 
     private readonly List<IDisposable> taskTriggers = new List<IDisposable>();
+
+    private readonly ITriggerableTask updateToDoListTask;
 
     public ElectronicsTimeApp(
         IServiceScopeFactory serviceScopeFactory,
@@ -53,7 +58,7 @@ internal sealed class ElectronicsTimeApp : IDisposable
         maysonsToDoList = homeAssistantEntities.Todo.Mayson;
         taskTriggers.Add(maysonsToDoList.StateChanges().SubscribeAsync(HandleToDoListChangeAsync));
 
-        taskTriggers.Add(taskScheduler.CreateSelfSchedulingTask(UpdateToDoListAsync, TimeSpan.FromSeconds(30)));
+        updateToDoListTask = taskScheduler.CreateTriggerableSelfSchedulingTask(UpdateToDoListAsync, TimeSpan.FromSeconds(30));
 
         foreach (var triggeredToDoListItem in RecurringToDoListItems.Where(r => r.RecurringToDoListItemType == RecurringToDoListItemType.Triggered))
         {
@@ -62,7 +67,11 @@ internal sealed class ElectronicsTimeApp : IDisposable
         }
     }
 
-    public void Dispose() => taskTriggers.ForEach(t => t.Dispose());
+    public void Dispose()
+    {
+        taskTriggers.ForEach(t => t.Dispose());
+        updateToDoListTask.Dispose();
+    }
 
     private async Task HandleToDoListChangeAsync(StateChange<TodoEntity, EntityState<TodoAttributes>> stateChange)
     {
@@ -93,6 +102,8 @@ internal sealed class ElectronicsTimeApp : IDisposable
             await dbContext.ToDoListItems
                 .Where(t => incompleteItems.Keys.Contains(t.Uid))
                 .ExecuteUpdateAsync(u => u.SetProperty(e => e.CompletedAt, DateTime.UtcNow));
+
+            updateToDoListTask.Trigger();
         }
     }
 
@@ -148,6 +159,7 @@ internal sealed class ElectronicsTimeApp : IDisposable
         var today = now.Date;
         var tomorrow = today.NextDay();
         var currentTime = TimeOnly.FromDateTime(now);
+        var dayOfWeek = today.DayOfWeek;
         var lastOccurences = await dbContext.ToDoListItems
             .Where(t => RecurringToDoListItems.Select(r => r.Name).Contains(t.Name))
             .Where(t => t.Id == dbContext.ToDoListItems.Where(n => n.Name == t.Name).Select(n => n.Id).Max())
@@ -155,16 +167,21 @@ internal sealed class ElectronicsTimeApp : IDisposable
         foreach (var recurringItem in RecurringToDoListItems.Where(r => !r.NextOccurrence.HasValue))
         {
             var lastOccurence = lastOccurences.FirstOrDefault(l => l.Name == recurringItem.Name);
-            if (recurringItem.RecurringToDoListItemType == RecurringToDoListItemType.Daily)
+            if (lastOccurence == null || lastOccurence.CompletedAt.HasValue)
             {
-                recurringItem.NextOccurrence = (recurringItem.StartAt > currentTime && (lastOccurence?.CreatedAt ?? DateTime.MinValue) < today
-                    ? today + recurringItem.StartAt.ToTimeSpan()
-                    : tomorrow + recurringItem.StartAt.ToTimeSpan())
-                        .ToUniversalTime();
-            }
-            else
-            {
-                recurringItem.NextOccurrence = null;
+                var lastOccurenceAt = recurringItem.RecurringToDoListItemType == RecurringToDoListItemType.EveryXDays
+                    ? lastOccurence?.CompletedAt ?? DateTime.MinValue
+                    : lastOccurence?.CreatedAt ?? DateTime.MinValue;
+                var nextOccurenceDate = recurringItem.RecurringToDoListItemType switch
+                {
+                    RecurringToDoListItemType.Daily => lastOccurenceAt < today ? today : tomorrow,
+                    RecurringToDoListItemType.Weekly => lastOccurenceAt < today && recurringItem.WeeklyDayOfWeek == dayOfWeek ? today : today.Next(recurringItem.WeeklyDayOfWeek),
+                    RecurringToDoListItemType.EveryXDays => lastOccurenceAt < today.AddDays(recurringItem.DaysBetween * -1) ? today : lastOccurenceAt.AddDays(recurringItem.DaysBetween).Date,
+                    _ => DateTime.MinValue,
+                };
+                recurringItem.NextOccurrence = nextOccurenceDate == DateTime.MinValue
+                    ? null
+                    : (nextOccurenceDate + recurringItem.StartAt.ToTimeSpan()).ToUniversalTime();
             }
         }
     }

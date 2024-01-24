@@ -12,37 +12,31 @@ internal sealed class TaskScheduler : ITaskScheduler
     }
 
     public IDisposable CreatePeriodicTask(TimeSpan period, Func<CancellationToken, Task> action)
-    {
-        var task = new TriggerableTask();
-        _ = RunTaskAsync(
-                async c =>
-                {
-                    await action(c);
-                    return period;
-                },
-                period,
-                task);
-        return task;
-    }
+        => CreateTriggerableSelfSchedulingTask(
+            async c =>
+            {
+                await action(c);
+                return period;
+            },
+            period);
 
     public IDisposable CreateSelfSchedulingTask(Func<CancellationToken, Task<TimeSpan>> action, TimeSpan onExceptionRetryIn)
-    {
-        var task = new TriggerableTask();
-        _ = RunTaskAsync(action, onExceptionRetryIn, task);
-        return task;
-    }
+        => CreateTriggerableSelfSchedulingTask(action, onExceptionRetryIn);
 
     public IDisposable CreateSelfSchedulingTask(Func<CancellationToken, Task<DateTime>> action, TimeSpan onExceptionRetryIn)
-    {
-        var task = new TriggerableTask();
-        _ = RunTaskAsync(async c => await action(c) - DateTime.UtcNow, onExceptionRetryIn, task);
-        return task;
-    }
+        => CreateTriggerableSelfSchedulingTask(action, onExceptionRetryIn);
 
     public ITriggerableTask CreateTriggerableSelfSchedulingTask(Func<CancellationToken, Task<TimeSpan>> action, TimeSpan onExceptionRetryIn)
     {
         var task = new TriggerableTask();
         _ = RunTaskAsync(action, onExceptionRetryIn, task);
+        return task;
+    }
+
+    public ITriggerableTask CreateTriggerableSelfSchedulingTask(Func<CancellationToken, Task<DateTime>> action, TimeSpan onExceptionRetryIn)
+    {
+        var task = new TriggerableTask();
+        _ = RunTaskAsync(async c => await action(c) - DateTime.UtcNow, onExceptionRetryIn, task);
         return task;
     }
 
