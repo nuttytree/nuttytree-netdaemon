@@ -24,9 +24,9 @@ public sealed class Startup
 
         services.AddApplication();
 
-        services.AddRazorPages();
-
         services.AddMvc();
+
+        services.AddHealthChecks();
 
         services.AddSwaggerGen(c =>
         {
@@ -36,8 +36,6 @@ public sealed class Startup
 
     public void Configure(IApplicationBuilder app)
     {
-        app.UseStaticFiles();
-
         app.UseSerilogRequestLogging();
 
         app.UseRouting();
@@ -47,7 +45,7 @@ public sealed class Startup
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();
-            endpoints.MapRazorPages();
+            endpoints.MapHealthChecks("/health");
             endpoints.MapSwagger();
         });
 
