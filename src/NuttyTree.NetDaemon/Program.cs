@@ -18,6 +18,7 @@ public static class Program
             var host = Host.CreateDefaultBuilder(args)
                 .UseLogging()
                 .UseNetDaemonRuntime()
+                .UseNetDaemonAppSettings()
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using NuttyTree.NetDaemon.Application.Announcements;
 using NuttyTree.NetDaemon.Application.AppointmentReminders;
+using NuttyTree.NetDaemon.Application.ElectronicsTime;
 using NuttyTree.NetDaemon.ExternalServices.Frigate;
 using NuttyTree.NetDaemon.ExternalServices.HomeAssistantCalendar;
 using NuttyTree.NetDaemon.ExternalServices.RandomWords;
@@ -21,7 +22,8 @@ public static class IServiceCollectionExtensions
         services
             .AddAppsFromAssembly(Assembly.GetExecutingAssembly())
             .AddAnnouncementsService()
-            .AddAppointmentRemindersApp();
+            .AddAppointmentRemindersApp()
+            .AddElectronicsTimeApp();
 
         // External Services
         services

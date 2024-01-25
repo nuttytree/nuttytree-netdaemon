@@ -366,3 +366,4 @@ appsettings.Development.json
 data/*
 /src/NuttyTree.NetDaemon.Infrastructure/HomeAssistant/EntitiesAndServices.cs
 /src/NuttyTree.NetDaemon/NetDaemonCodegen
+/src/NuttyTree.NetDaemon/Config/ToDoListItems.yaml
