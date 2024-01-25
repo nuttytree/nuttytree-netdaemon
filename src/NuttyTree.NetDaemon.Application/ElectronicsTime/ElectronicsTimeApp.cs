@@ -164,8 +164,8 @@ internal sealed class ElectronicsTimeApp : IDisposable
             if (lastOccurence == null || lastOccurence.CompletedAt.HasValue || !lastOccurence.ExpiresAt.HasValue)
             {
                 var lastOccurenceAt = recurringItem.RecurringToDoListItemType == RecurringToDoListItemType.EveryXDays
-                    ? lastOccurence?.CompletedAt ?? DateTime.MinValue
-                    : lastOccurence?.CreatedAt ?? DateTime.MinValue;
+                    ? lastOccurence?.CompletedAt?.ToLocalTime() ?? DateTime.MinValue
+                    : lastOccurence?.CreatedAt.ToLocalTime() ?? DateTime.MinValue;
                 var nextOccurenceDate = recurringItem.RecurringToDoListItemType switch
                 {
                     RecurringToDoListItemType.Daily => lastOccurenceAt < today ? today : tomorrow,
