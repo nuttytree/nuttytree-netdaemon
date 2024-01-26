@@ -1,5 +1,13 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS builder
 
+USER root
+
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+USER app
+
 ARG HOMEASSISTANT__HOST
 ARG HOMEASSISTANT__PORT
 ARG HOMEASSISTANT__SSL
@@ -10,6 +18,9 @@ ENV PATH="/root/.dotnet/tools:${PATH}"
 COPY . /app
 
 WORKDIR /app
+
+RUN apt-get update 
+RUN apt-get --yes install curl
 
 RUN dotnet restore ./NuttyTree.NetDaemon.sln && \
 dotnet build --no-restore -c Release /p:SelfContained=false ./NuttyTree.NetDaemon.sln
