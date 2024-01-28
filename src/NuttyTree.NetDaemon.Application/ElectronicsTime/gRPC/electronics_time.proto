@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option csharp_namespace = "NuttyTree.NetDaemon.Application.ElectronicsTime.gRPC";
+
+package electronics_time;
+
+service ElectronicsTimeStatus {
+  rpc GetStatus (GetStatusRequest) returns (stream StatusResponse);
+}
+
+message GetStatusRequest {
+}
+
+enum ElectronicsMode {
+    Restricted = 0;
+    Normal = 1;
+    Unrestricted = 2;
+}
+
+message StatusResponse {
+  ElectronicsMode mode = 1;
+}
