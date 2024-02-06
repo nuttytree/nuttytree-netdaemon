@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using NuttyTree.NetDaemon.Application.ElectronicsTime.Options;
 
-namespace NuttyTree.NetDaemon.Application.ElectronicsTime;
+namespace NuttyTree.NetDaemon.Application.ElectronicsTime.Extensions;
 
 public static class IServiceCollectionExtensions
 {
