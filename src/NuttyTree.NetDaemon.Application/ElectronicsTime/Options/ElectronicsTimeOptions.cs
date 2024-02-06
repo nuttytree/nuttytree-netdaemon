@@ -4,5 +4,7 @@ namespace NuttyTree.NetDaemon.Application.ElectronicsTime.Options;
 
 internal sealed class ElectronicsTimeOptions
 {
-    public List<RecurringToDoListItem> ToDoListItems { get; set; } = new List<RecurringToDoListItem>();
+    public IList<RecurringToDoListItem> ToDoListItems { get; set; } = new List<RecurringToDoListItem>();
+
+    public IList<AllowedApplication> Applications { get; set; } = new List<AllowedApplication>();
 }

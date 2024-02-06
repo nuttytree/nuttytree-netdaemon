@@ -12,7 +12,7 @@ using NuttyTree.NetDaemon.Infrastructure.Scheduler;
 
 namespace NuttyTree.NetDaemon.Application.ElectronicsTime;
 
-[NetDaemonApp]
+//[NetDaemonApp]
 internal sealed class ElectronicsTimeApp : IDisposable
 {
     private readonly IServiceScopeFactory serviceScopeFactory;

@@ -2,7 +2,7 @@
 using NetDaemon.Extensions.Scheduler;
 using NetDaemon.Runtime;
 using NuttyTree.NetDaemon.Application;
-using NuttyTree.NetDaemon.Application.ElectronicsTime.gRPC;
+using NuttyTree.NetDaemon.Application.ElectronicsTime.Extensions;
 using Serilog;
 
 namespace NuttyTree.NetDaemon;
@@ -45,7 +45,7 @@ public sealed class Startup
 
         app.UseEndpoints(endpoints =>
         {
-            endpoints.MapGrpcService<ElectronicsTimeStatusService>();
+            endpoints.MapElectronicsTimeGrpcService();
             endpoints.MapControllers();
             endpoints.MapHealthChecks("/health");
             endpoints.MapSwagger();
