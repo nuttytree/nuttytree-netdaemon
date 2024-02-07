@@ -16,5 +16,5 @@ internal sealed class AllowedApplication
 
     public ApplicationAllowType AllowType { get; set; }
 
-    public IList<AllowedLocation>? AllowedLocations { get; set; } = new List<AllowedLocation>();
+    public IList<ApplicationLocation> AllowedLocations { get; set; } = new List<ApplicationLocation>();
 }

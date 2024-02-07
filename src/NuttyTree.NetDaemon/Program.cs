@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
+using NetDaemon.AppModel;
 using NetDaemon.Runtime;
+using NuttyTree.NetDaemon.Extensions;
 using NuttyTree.NetDaemon.Infrastructure.Database;
 using NuttyTree.NetDaemon.Infrastructure.Logging;
 using Serilog;
@@ -18,7 +20,7 @@ public static class Program
             var host = Host.CreateDefaultBuilder(args)
                 .UseLogging()
                 .UseNetDaemonRuntime()
-                .UseNetDaemonAppSettings()
+                .UseReloadableYamlAppSettings()
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
