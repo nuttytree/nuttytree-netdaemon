@@ -2,7 +2,7 @@
 
 namespace NuttyTree.NetDaemon.Application.ElectronicsTime.Models;
 
-internal sealed class AllowedLocation
+internal sealed class ApplicationLocation
 {
     public string? Location { get; set; }
 

@@ -27,8 +27,11 @@ internal sealed class ElectronicsTimeGrpcService : ElectronicsTimeGrpc.Electroni
                 var app = new Application
                 {
                     Name = a.Name,
+                    AllowedWindowTitles = { a.AllowedWindowTitles },
+                    DeniedWindowTitles = { a.DeniedWindowTitles },
                     RequiresTime = a.RequiresTime,
                     AllowType = a.AllowType,
+                    AllowedLocations = { a.AllowedLocations.Select(l => new AllowedLocation { Location = l.Location, AllowType = l.AllowType }) },
                 };
                 app.AllowedWindowTitles.AddRange(a.AllowedWindowTitles);
                 app.DeniedWindowTitles.AddRange(a.DeniedWindowTitles);
