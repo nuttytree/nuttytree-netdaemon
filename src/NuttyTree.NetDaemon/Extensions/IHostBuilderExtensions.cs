@@ -1,5 +1,4 @@
-﻿using NetDaemon.AppModel;
-using NetDaemon.Runtime;
+﻿using NetDaemon.Runtime;
 
 namespace NuttyTree.NetDaemon.Extensions;
 

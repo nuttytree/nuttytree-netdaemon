@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading;
-using FluentDateTime;
+﻿using FluentDateTime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -130,7 +128,7 @@ internal sealed class ElectronicsTimeApp : IDisposable
 
             var unreviewedItems = await dbContext.ToDoListItems
                 .Where(t => t.ReviewUid != null && reviewedItems.Select(c => c.Uid).Contains(t.ReviewUid.Value))
-                .ToDictionaryAsync(t => t.ReviewUid!.Value);
+                .ToDictionaryAsync(t => t.Uid);
 
             foreach (var reviewedItem in reviewedItems)
             {
