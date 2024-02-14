@@ -13,6 +13,7 @@ public static class IHostBuilderExtensions
         {
             config.MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning);
             config.MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning);
+            config.MinimumLevel.Override("Microsoft.AspNetCore.Hosting", LogEventLevel.Warning);
             config.WriteTo.Async(sinkConfig =>
             {
                 sinkConfig.Console(formatProvider: CultureInfo.CurrentCulture);
