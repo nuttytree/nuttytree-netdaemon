@@ -1,4 +1,6 @@
-﻿using FluentDateTime;
+﻿using System.Collections.Generic;
+using System.Threading;
+using FluentDateTime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -25,6 +27,14 @@ internal sealed class ElectronicsTimeApp : IDisposable
 
     private readonly TodoEntity maysonsToDoList;
 
+    private readonly TodoEntity maysonsOptionalToDoList;
+
+    private readonly TodoEntity maysonsReviewList;
+
+    private readonly TodoEntity maysonsOptionalReviewList;
+
+    private readonly string? chrisUserId;
+
     private readonly List<IDisposable> taskTriggers = new List<IDisposable>();
 
     private readonly ITriggerableTask updateToDoListTask;
@@ -43,7 +53,14 @@ internal sealed class ElectronicsTimeApp : IDisposable
         this.logger = logger;
 
         maysonsToDoList = homeAssistantEntities.Todo.Mayson;
+        maysonsOptionalToDoList = homeAssistantEntities.Todo.MaysonOptional;
+        maysonsReviewList = homeAssistantEntities.Todo.MaysonReview;
+        maysonsOptionalReviewList = homeAssistantEntities.Todo.MaysonOptionalReview;
+        chrisUserId = homeAssistantEntities.Person.Chris.Attributes?.UserId;
         taskTriggers.Add(maysonsToDoList.StateChanges().SubscribeAsync(HandleToDoListChangeAsync));
+        taskTriggers.Add(maysonsOptionalToDoList.StateChanges().SubscribeAsync(HandleToDoListChangeAsync));
+        taskTriggers.Add(maysonsReviewList.StateChanges().SubscribeAsync(HandleReviewListChangeAsync));
+        taskTriggers.Add(maysonsOptionalReviewList.StateChanges().SubscribeAsync(HandleReviewListChangeAsync));
 
         updateToDoListTask = taskScheduler.CreateTriggerableSelfSchedulingTask(UpdateToDoListAsync, TimeSpan.FromSeconds(30));
 
@@ -69,35 +86,67 @@ internal sealed class ElectronicsTimeApp : IDisposable
 
     private async Task HandleToDoListChangeAsync(StateChange<TodoEntity, EntityState<TodoAttributes>> stateChange)
     {
-        var completedItems = await maysonsToDoList.GetItemsAsync("completed");
+        var todoList = stateChange.Entity;
+        var completedItems = await todoList.GetItemsAsync("completed");
         if (completedItems.Count > 0)
         {
             using var scope = serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<NuttyDbContext>();
-
             var incompleteItems = await dbContext.ToDoListItems
                 .Where(t => completedItems.Select(c => c.Uid).Contains(t.Uid))
                 .ToDictionaryAsync(t => t.Uid);
 
             foreach (var completedItem in completedItems)
             {
-                if (incompleteItems.TryGetValue(completedItem.Uid, out var incompleteItem) && incompleteItem.MinutesEarned > 0)
+                var incompleteItem = incompleteItems.GetValueOrDefault(completedItem.Uid, new ToDoListItemEntity
                 {
-                    homeAssistantEntities.Counter.MaysonElectronicsTime.Increase(incompleteItem.MinutesEarned);
-                    logger.LogInformation(
-                        "Added {EarnedMinutes} minutes to Mayson's time for completing to do list item {ToDoListItem}",
-                        incompleteItem.MinutesEarned,
-                        incompleteItem.Name);
-                }
+                    Uid = completedItem.Uid,
+                    Name = completedItem.Summary,
+                });
 
-                maysonsToDoList.RemoveItem(completedItem.Summary);
+                var reviewItem = todoList.EntityId == maysonsToDoList.EntityId
+                    ? await maysonsReviewList.AddItemAsync(incompleteItem.Name, description: incompleteItem.MinutesEarned > 0 ? $"{incompleteItem.MinutesEarned} Minutes" : null)
+                    : await maysonsOptionalReviewList.AddItemAsync(incompleteItem.Name, description: incompleteItem.MinutesEarned > 0 ? $"{incompleteItem.MinutesEarned} Minutes" : null);
+                incompleteItem.ReviewUid = reviewItem.Uid;
+                incompleteItem.CompletedAt = DateTime.UtcNow;
+
+                todoList.RemoveItem(completedItem.Summary);
             }
 
-            await dbContext.ToDoListItems
-                .Where(t => incompleteItems.Keys.Contains(t.Uid))
-                .ExecuteUpdateAsync(u => u.SetProperty(e => e.CompletedAt, DateTime.UtcNow));
+            await dbContext.SaveChangesAsync();
 
             updateToDoListTask.Trigger();
+        }
+    }
+
+    private async Task HandleReviewListChangeAsync(StateChange<TodoEntity, EntityState<TodoAttributes>> stateChange)
+    {
+        var reviewList = stateChange.Entity;
+        var reviewedItems = await reviewList.GetItemsAsync("completed");
+        if (reviewedItems.Count > 0)
+        {
+            using var scope = serviceScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<NuttyDbContext>();
+
+            var unreviewedItems = await dbContext.ToDoListItems
+                .Where(t => t.ReviewUid != null && reviewedItems.Select(c => c.Uid).Contains(t.ReviewUid.Value))
+                .ToDictionaryAsync(t => t.Uid);
+
+            foreach (var reviewedItem in reviewedItems)
+            {
+                if (unreviewedItems.TryGetValue(reviewedItem.Uid, out var unreviewedItem)
+                    && unreviewedItem.MinutesEarned > 0
+                    && stateChange.New?.Context?.UserId == chrisUserId)
+                {
+                    homeAssistantEntities.Counter.MaysonElectronicsTime.Increase(unreviewedItem.MinutesEarned);
+                    logger.LogInformation(
+                        "Added {EarnedMinutes} minutes to Mayson's time for completing to do list item {ToDoListItem}",
+                        unreviewedItem.MinutesEarned,
+                        unreviewedItem.Name);
+                }
+
+                reviewList.RemoveItem(reviewedItem.Summary);
+            }
         }
     }
 
