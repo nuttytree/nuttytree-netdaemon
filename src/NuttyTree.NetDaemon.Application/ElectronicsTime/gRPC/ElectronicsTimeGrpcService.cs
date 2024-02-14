@@ -8,35 +8,34 @@ internal sealed class ElectronicsTimeGrpcService : ElectronicsTimeGrpc.Electroni
 {
     private readonly IOptionsMonitor<ElectronicsTimeOptions> options;
 
-    private TaskCompletionSource updateConfigTrigger;
-
     public ElectronicsTimeGrpcService(IOptionsMonitor<ElectronicsTimeOptions> options)
     {
         this.options = options;
-        updateConfigTrigger = new TaskCompletionSource();
-        options.OnChange((_, _) => updateConfigTrigger.TrySetResult());
     }
 
     public override async Task GetApplicationConfig(ApplicationConfigRequest request, IServerStreamWriter<ApplicationConfigResponse> responseStream, ServerCallContext context)
     {
+        var updateConfigTrigger = new TaskCompletionSource();
+        using var onChange = options.OnChange((_, _) => updateConfigTrigger.TrySetResult());
+
         while (!context.CancellationToken.IsCancellationRequested)
         {
-            var response = new ApplicationConfigResponse();
-            response.Applications.AddRange(options.CurrentValue.Applications.Select(a =>
+            var response = new ApplicationConfigResponse
             {
-                var app = new Application
+                Applications =
                 {
-                    Name = a.Name,
-                    AllowedWindowTitles = { a.AllowedWindowTitles },
-                    DeniedWindowTitles = { a.DeniedWindowTitles },
-                    RequiresTime = a.RequiresTime,
-                    AllowType = a.AllowType,
-                    AllowedLocations = { a.AllowedLocations.Select(l => new AllowedLocation { Location = l.Location, AllowType = l.AllowType }) },
-                };
-                app.AllowedWindowTitles.AddRange(a.AllowedWindowTitles);
-                app.DeniedWindowTitles.AddRange(a.DeniedWindowTitles);
-                return app;
-            }));
+                    options.CurrentValue.Applications.Select(a => new Application
+                    {
+                        Name = a.Name,
+                        AllowedWindowTitles = { a.AllowedWindowTitles },
+                        DeniedWindowTitles = { a.DeniedWindowTitles },
+                        AllowOffline = a.AllowOffline,
+                        RequiresTime = a.RequiresTime,
+                        AllowType = a.AllowType,
+                        AllowedLocations = { a.AllowedLocations.Select(l => new AllowedLocation { Location = l.Location, AllowType = l.AllowType }) },
+                    })
+                }
+            };
             await responseStream.WriteAsync(response, context.CancellationToken);
 
             await updateConfigTrigger.Task;

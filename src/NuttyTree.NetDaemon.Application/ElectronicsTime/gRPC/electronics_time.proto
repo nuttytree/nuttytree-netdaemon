@@ -20,9 +20,10 @@ message Application {
     string name = 1;
     repeated string allowedWindowTitles = 2;
     repeated string deniedWindowTitles = 3;
-    bool requiresTime = 4;
-    ApplicationAllowType allowType = 5;
-    repeated AllowedLocation allowedLocations = 6;
+    bool allowOffline = 4;
+    bool requiresTime = 5;
+    ApplicationAllowType allowType = 6;
+    repeated AllowedLocation allowedLocations = 7;
 }
 
 message AllowedLocation {

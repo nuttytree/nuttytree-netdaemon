@@ -12,6 +12,8 @@ internal sealed class AllowedApplication
 
     public IList<string> DeniedWindowTitles { get; set; } = new List<string>();
 
+    public bool AllowOffline { get; set; }
+
     public bool RequiresTime { get; set; }
 
     public ApplicationAllowType AllowType { get; set; }

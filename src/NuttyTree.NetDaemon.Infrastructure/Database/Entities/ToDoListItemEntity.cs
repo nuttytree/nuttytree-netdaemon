@@ -15,4 +15,6 @@ public sealed class ToDoListItemEntity
     public DateTime? ExpiresAt { get; set; }
 
     public DateTime? CompletedAt { get; set; }
+
+    public Guid? ReviewUid { get; set; }
 }

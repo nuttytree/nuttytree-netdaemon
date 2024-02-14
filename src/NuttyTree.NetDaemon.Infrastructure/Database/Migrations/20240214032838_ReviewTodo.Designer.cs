@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NuttyTree.NetDaemon.Infrastructure.Database;
 
@@ -10,9 +11,11 @@ using NuttyTree.NetDaemon.Infrastructure.Database;
 namespace NuttyTree.NetDaemon.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(NuttyDbContext))]
-    partial class NuttyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240214032838_ReviewTodo")]
+    partial class ReviewTodo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.1");

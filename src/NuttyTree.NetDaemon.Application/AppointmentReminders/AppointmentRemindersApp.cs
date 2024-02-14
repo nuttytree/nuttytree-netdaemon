@@ -288,7 +288,9 @@ internal sealed class AppointmentRemindersApp : IDisposable
         {
             try
             {
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
                 var serviceType = await serviceTrigger.Task;
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
                 serviceTrigger = new TaskCompletionSource<AppointmentRemindersServiceType>();
 
                 logger.LogInformation("Service {ServiceType} was called", serviceType);
