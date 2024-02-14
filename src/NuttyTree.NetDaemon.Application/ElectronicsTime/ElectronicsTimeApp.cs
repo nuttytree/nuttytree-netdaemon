@@ -130,7 +130,7 @@ internal sealed class ElectronicsTimeApp : IDisposable
 
             var unreviewedItems = await dbContext.ToDoListItems
                 .Where(t => t.ReviewUid != null && reviewedItems.Select(c => c.Uid).Contains(t.ReviewUid.Value))
-                .ToDictionaryAsync(t => t.Uid);
+                .ToDictionaryAsync(t => t.ReviewUid!.Value);
 
             foreach (var reviewedItem in reviewedItems)
             {
