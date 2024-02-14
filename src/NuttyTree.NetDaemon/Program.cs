@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using NetDaemon.AppModel;
 using NetDaemon.Runtime;
 using NuttyTree.NetDaemon.Extensions;
 using NuttyTree.NetDaemon.Infrastructure.Database;
