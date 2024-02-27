@@ -9,18 +9,18 @@
   <ItemGroup>
     <PackageReference Include="FluentDateTime" Version="2.1.0" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.61.0" />
-    <PackageReference Include="NetDaemon.AppModel" Version="24.3.1" />
+    <PackageReference Include="NetDaemon.AppModel" Version="24.8.0" />
     <PackageReference Include="NetDaemon.Runtime" Version="24.3.1" />
     <PackageReference Include="NetDaemon.Client" Version="24.8.0" />
     <PackageReference Include="NetDaemon.Extensions.Scheduling" Version="24.3.1" />
-    <PackageReference Include="NetDaemon.Extensions.Logging" Version="24.3.1" />
+    <PackageReference Include="NetDaemon.Extensions.Logging" Version="24.8.0" />
     <PackageReference Include="NetDaemon.Extensions.Tts" Version="24.8.0" />
     <PackageReference Include="Net.Codecrete.QrCodeGenerator" Version="2.0.4" />
     <PackageReference Include="System.IO.Abstractions" Version="20.0.15" />
     <PackageReference Include="System.Reactive" Version="6.0.0" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.0" />
     <PackageReference Include="System.ServiceModel.Primitives" Version="8.0.0" />
-    <PackageReference Include="YamlDotNet" Version="15.1.1" />
+    <PackageReference Include="YamlDotNet" Version="15.1.2" />
   </ItemGroup>
 
   <ItemGroup>
