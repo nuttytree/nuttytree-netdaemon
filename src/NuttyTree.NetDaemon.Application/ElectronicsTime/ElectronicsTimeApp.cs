@@ -17,9 +17,11 @@ internal sealed class ElectronicsTimeApp : IDisposable
 {
     private readonly IServiceScopeFactory serviceScopeFactory;
 
-    private readonly IOptionsMonitor<ElectronicsTimeOptions> options;
+    private readonly IHaContext haContext;
 
     private readonly IEntities homeAssistantEntities;
+
+    private readonly IOptionsMonitor<ElectronicsTimeOptions> options;
 
     private readonly ILogger<ElectronicsTimeApp> logger;
 
@@ -33,21 +35,24 @@ internal sealed class ElectronicsTimeApp : IDisposable
 
     private readonly string? chrisUserId;
 
+    private readonly List<IDisposable> toDoListUpdateTriggers = new List<IDisposable>();
+
     private readonly List<IDisposable> taskTriggers = new List<IDisposable>();
 
     private readonly ITriggerableTask updateToDoListTask;
 
     public ElectronicsTimeApp(
         IServiceScopeFactory serviceScopeFactory,
+        IHaContext haContext,
+        IEntities homeAssistantEntities,
         IOptionsMonitor<ElectronicsTimeOptions> options,
         ILogger<ElectronicsTimeApp> logger,
-        IEntities homeAssistantEntities,
-        ITaskScheduler taskScheduler,
-        IHaContext haContext)
+        ITaskScheduler taskScheduler)
     {
         this.serviceScopeFactory = serviceScopeFactory;
-        this.options = options;
+        this.haContext = haContext;
         this.homeAssistantEntities = homeAssistantEntities;
+        this.options = options;
         this.logger = logger;
 
         maysonsToDoList = homeAssistantEntities.Todo.Mayson;
@@ -55,13 +60,32 @@ internal sealed class ElectronicsTimeApp : IDisposable
         maysonsReviewList = homeAssistantEntities.Todo.MaysonReview;
         maysonsOptionalReviewList = homeAssistantEntities.Todo.MaysonOptionalReview;
         chrisUserId = homeAssistantEntities.Person.Chris.Attributes?.UserId;
-        taskTriggers.Add(maysonsToDoList.StateChanges().SubscribeAsync(HandleToDoListChangeAsync));
-        taskTriggers.Add(maysonsOptionalToDoList.StateChanges().SubscribeAsync(HandleToDoListChangeAsync));
-        taskTriggers.Add(maysonsReviewList.StateChanges().SubscribeAsync(HandleReviewListChangeAsync));
-        taskTriggers.Add(maysonsOptionalReviewList.StateChanges().SubscribeAsync(HandleReviewListChangeAsync));
+        toDoListUpdateTriggers.Add(maysonsToDoList.StateChanges().SubscribeAsync(HandleToDoListChangeAsync));
+        toDoListUpdateTriggers.Add(maysonsOptionalToDoList.StateChanges().SubscribeAsync(HandleToDoListChangeAsync));
+        toDoListUpdateTriggers.Add(maysonsReviewList.StateChanges().SubscribeAsync(HandleReviewListChangeAsync));
+        toDoListUpdateTriggers.Add(maysonsOptionalReviewList.StateChanges().SubscribeAsync(HandleReviewListChangeAsync));
 
         updateToDoListTask = taskScheduler.CreateTriggerableSelfSchedulingTask(UpdateToDoListAsync, TimeSpan.FromSeconds(30));
 
+        UpdateTaskTriggers();
+        toDoListUpdateTriggers.Add(options.OnChange(o =>
+        {
+            UpdateTaskTriggers();
+            updateToDoListTask.Trigger();
+        }) !);
+    }
+
+    public void Dispose()
+    {
+        toDoListUpdateTriggers.ForEach(t => t.Dispose());
+        taskTriggers.ForEach(t => t.Dispose());
+        updateToDoListTask.Dispose();
+    }
+
+    private void UpdateTaskTriggers()
+    {
+        taskTriggers.ForEach(t => t.Dispose());
+        taskTriggers.Clear();
         foreach (var triggeredToDoListItem in options.CurrentValue.ToDoListItems.Where(r => r.RecurringToDoListItemType == RecurringToDoListItemType.Triggered))
         {
             taskTriggers.Add(haContext.Entity(triggeredToDoListItem.TriggerSensor!).StateChanges()
@@ -69,17 +93,6 @@ internal sealed class ElectronicsTimeApp : IDisposable
         }
 
         logger.LogInformation("Loaded {ToDoListCount} recurring to do list items", options.CurrentValue.ToDoListItems.Count);
-        taskTriggers.Add(options.OnChange(o =>
-        {
-            updateToDoListTask.Trigger();
-            logger.LogInformation("Loaded {ToDoListCount} recurring to do list items", o.ToDoListItems.Count);
-        }) !);
-    }
-
-    public void Dispose()
-    {
-        taskTriggers.ForEach(t => t.Dispose());
-        updateToDoListTask.Dispose();
     }
 
     private async Task HandleToDoListChangeAsync(StateChange<TodoEntity, EntityState<TodoAttributes>> stateChange)
@@ -103,8 +116,8 @@ internal sealed class ElectronicsTimeApp : IDisposable
                 });
 
                 var reviewItem = todoList.EntityId == maysonsToDoList.EntityId
-                    ? await maysonsReviewList.AddItemAsync(incompleteItem.Name, description: incompleteItem.MinutesEarned > 0 ? $"{incompleteItem.MinutesEarned} Minutes" : null)
-                    : await maysonsOptionalReviewList.AddItemAsync(incompleteItem.Name, description: incompleteItem.MinutesEarned > 0 ? $"{incompleteItem.MinutesEarned} Minutes" : null);
+                    ? await maysonsReviewList.AddItemAsync($"{incompleteItem.Name} ({DateTime.Now:ddd h:mm tt})")
+                    : await maysonsOptionalReviewList.AddItemAsync($"{incompleteItem.Name} ({DateTime.Now:ddd h:mm tt})");
                 incompleteItem.ReviewUid = reviewItem.Uid;
                 incompleteItem.CompletedAt = DateTime.UtcNow;
 
@@ -143,7 +156,18 @@ internal sealed class ElectronicsTimeApp : IDisposable
                         unreviewedItem.Name);
                 }
 
-                reviewList.RemoveItem(reviewedItem.Summary);
+                if (stateChange.New?.Context?.UserId == chrisUserId)
+                {
+                    reviewList.RemoveItem(reviewedItem.Summary);
+                }
+                else
+                {
+                    reviewList.UpdateItem(reviewedItem.Summary, status: "needs_action");
+                    homeAssistantEntities.Counter.MaysonElectronicsTime.Increase(-5);
+                    logger.LogInformation(
+                        "Removed 5 minutes from Mayson's time for trying to mark to do list item {ToDoListItem} as reviewed",
+                        reviewedItem.Summary);
+                }
             }
         }
     }
