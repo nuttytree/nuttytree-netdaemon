@@ -121,7 +121,7 @@ internal sealed class ElectronicsTimeApp : IDisposable
                 incompleteItem.ReviewUid = reviewItem.Uid;
                 incompleteItem.CompletedAt = DateTime.UtcNow;
 
-                todoList.RemoveItem(completedItem.Summary);
+                todoList.RemoveItem(completedItem.Uid);
             }
 
             await dbContext.SaveChangesAsync();
@@ -158,11 +158,11 @@ internal sealed class ElectronicsTimeApp : IDisposable
 
                 if (stateChange.New?.Context?.UserId == chrisUserId)
                 {
-                    reviewList.RemoveItem(reviewedItem.Summary);
+                    reviewList.RemoveItem(reviewedItem.Uid);
                 }
                 else
                 {
-                    reviewList.UpdateItem(reviewedItem.Summary, status: "needs_action");
+                    reviewList.UpdateItem(reviewedItem.Uid, status: "needs_action");
                     homeAssistantEntities.Counter.MaysonElectronicsTime.Increase(-5);
                     logger.LogInformation(
                         "Removed 5 minutes from Mayson's time for trying to mark to do list item {ToDoListItem} as reviewed",
@@ -200,7 +200,7 @@ internal sealed class ElectronicsTimeApp : IDisposable
 
         foreach (var expiredItem in expiredItems)
         {
-            maysonsToDoList.RemoveItem(expiredItem.Name);
+            maysonsToDoList.RemoveItem(expiredItem.Uid);
             logger.LogInformation("Removed expired to do list item {ToDoListItem}", expiredItem.Name);
         }
 
