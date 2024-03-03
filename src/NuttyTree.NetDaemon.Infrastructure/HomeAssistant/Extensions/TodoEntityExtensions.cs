@@ -38,4 +38,14 @@ public static class TodoEntityExtensions
             ? Array.Empty<TodoListItem>()
             : JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, ICollection<TodoListItem>>>>(response.Value, SerializerOptions) !.First().Value["items"];
     }
+
+    public static void UpdateItem(this TodoEntity entity, Guid id, string status)
+    {
+        entity.UpdateItem($"{id}", status: status);
+    }
+
+    public static void RemoveItem(this TodoEntity entity, Guid id)
+    {
+        entity.RemoveItem($"{id}");
+    }
 }
