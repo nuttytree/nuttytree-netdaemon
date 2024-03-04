@@ -2,7 +2,7 @@
 
 public sealed class TodoListItem
 {
-    public TodoListItem(Guid uid, string summary, string description, string status, DateTime? due = null)
+    public TodoListItem(Guid uid, string summary, string description, ToDoListItemStatus status, DateTime? due = null)
     {
         Uid = uid;
         Summary = summary;
@@ -17,7 +17,7 @@ public sealed class TodoListItem
 
     public string Description { get; set; }
 
-    public string Status { get; set; }
+    public ToDoListItemStatus Status { get; set; }
 
     public DateTime? Due { get; set; }
 }

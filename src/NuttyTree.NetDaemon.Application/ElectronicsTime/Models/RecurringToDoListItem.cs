@@ -6,6 +6,8 @@ internal sealed class RecurringToDoListItem
 
     public RecurringToDoListItemType RecurringToDoListItemType { get; set; }
 
+    public bool IsOptional { get; set; }
+
     public TimeOnly StartAt { get; set; }
 
     public DayOfWeek WeeklyDayOfWeek { get; set; }
