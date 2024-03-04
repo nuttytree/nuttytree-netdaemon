@@ -8,6 +8,7 @@ using NuttyTree.NetDaemon.Infrastructure.Database;
 using NuttyTree.NetDaemon.Infrastructure.Database.Entities;
 using NuttyTree.NetDaemon.Infrastructure.Extensions;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
+using NuttyTree.NetDaemon.Infrastructure.HomeAssistant.Models;
 using NuttyTree.NetDaemon.Infrastructure.Scheduler;
 
 namespace NuttyTree.NetDaemon.Application.ElectronicsTime;
@@ -98,7 +99,7 @@ internal sealed class ElectronicsTimeApp : IDisposable
     private async Task HandleToDoListChangeAsync(StateChange<TodoEntity, EntityState<TodoAttributes>> stateChange)
     {
         var todoList = stateChange.Entity;
-        var completedItems = await todoList.GetItemsAsync("completed");
+        var completedItems = await todoList.GetItemsAsync(ToDoListItemStatus.completed);
         if (completedItems.Count > 0)
         {
             using var scope = serviceScopeFactory.CreateScope();
@@ -116,8 +117,8 @@ internal sealed class ElectronicsTimeApp : IDisposable
                 });
 
                 var reviewItem = todoList.EntityId == maysonsToDoList.EntityId
-                    ? await maysonsReviewList.AddItemAsync($"{incompleteItem.Name} ({DateTime.Now:ddd h:mm tt})")
-                    : await maysonsOptionalReviewList.AddItemAsync($"{incompleteItem.Name} ({DateTime.Now:ddd h:mm tt})");
+                    ? await maysonsReviewList.AddItemAsync($"{incompleteItem.Name}", description: $"{DateTime.Now:ddd h:mm tt}")
+                    : await maysonsOptionalReviewList.AddItemAsync($"{incompleteItem.Name}", $"{DateTime.Now:ddd h:mm tt}");
                 incompleteItem.ReviewUid = reviewItem.Uid;
                 incompleteItem.CompletedAt = DateTime.UtcNow;
 
@@ -133,7 +134,7 @@ internal sealed class ElectronicsTimeApp : IDisposable
     private async Task HandleReviewListChangeAsync(StateChange<TodoEntity, EntityState<TodoAttributes>> stateChange)
     {
         var reviewList = stateChange.Entity;
-        var reviewedItems = await reviewList.GetItemsAsync("completed");
+        var reviewedItems = await reviewList.GetItemsAsync(ToDoListItemStatus.completed);
         if (reviewedItems.Count > 0)
         {
             using var scope = serviceScopeFactory.CreateScope();
@@ -162,11 +163,16 @@ internal sealed class ElectronicsTimeApp : IDisposable
                 }
                 else
                 {
-                    reviewList.UpdateItem(reviewedItem.Uid, status: "needs_action");
+                    reviewList.UpdateItem(reviewedItem.Uid, status: ToDoListItemStatus.needs_action);
                     homeAssistantEntities.Counter.MaysonElectronicsTime.Increase(-5);
                     logger.LogInformation(
                         "Removed 5 minutes from Mayson's time for trying to mark to do list item {ToDoListItem} as reviewed",
                         reviewedItem.Summary);
+                    if (unreviewedItem?.MinutesEarned > 0)
+                    {
+                        unreviewedItem.MinutesEarned = 0;
+                        await dbContext.SaveChangesAsync();
+                    }
                 }
             }
         }
@@ -206,7 +212,7 @@ internal sealed class ElectronicsTimeApp : IDisposable
 
         await dbContext.ToDoListItems
             .Where(t => expiredItems.Select(e => e.Id).Contains(t.Id))
-            .ExecuteUpdateAsync(u => u.SetProperty(t => t.ExpiresAt, _ => null), cancellationToken);
+            .ExecuteDeleteAsync(cancellationToken);
     }
 
     private async Task AddNewToDoListItemsAsync(NuttyDbContext dbContext, DateTime utcNow, CancellationToken cancellationToken)
@@ -264,8 +270,18 @@ internal sealed class ElectronicsTimeApp : IDisposable
 
     private async Task AddNewToDoListItemAsync(RecurringToDoListItem recurringToDoListItem, NuttyDbContext dbContext, CancellationToken cancellationToken = default)
     {
+        var toDoList = recurringToDoListItem.IsOptional
+            ? maysonsOptionalToDoList
+            : maysonsToDoList;
+
+        var currentItems = await toDoList.GetItemsAsync(ToDoListItemStatus.needs_action);
+        if (currentItems.Any(c => c.Summary == recurringToDoListItem.Name))
+        {
+            return;
+        }
+
         var utcNow = DateTime.UtcNow;
-        var createdItem = await maysonsToDoList.AddItemAsync(
+        var createdItem = await toDoList.AddItemAsync(
             recurringToDoListItem.Name,
             description: recurringToDoListItem.MinutesEarned > 0 ? $"{recurringToDoListItem.MinutesEarned} Minutes" : null,
             cancellationToken: cancellationToken);
