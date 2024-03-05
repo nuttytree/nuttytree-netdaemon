@@ -1,4 +1,6 @@
-﻿namespace NuttyTree.NetDaemon.Infrastructure.HomeAssistant.Models;
+﻿using System.Text.Json.Serialization;
+
+namespace NuttyTree.NetDaemon.Infrastructure.HomeAssistant.Models;
 
 public sealed class TodoListItem
 {
@@ -17,6 +19,7 @@ public sealed class TodoListItem
 
     public string Description { get; set; }
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public ToDoListItemStatus Status { get; set; }
 
     public DateTime? Due { get; set; }
