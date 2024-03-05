@@ -6,6 +6,7 @@ package electronics_time;
 
 service ElectronicsTimeGrpc {
     rpc GetApplicationConfig (ApplicationConfigRequest) returns (stream ApplicationConfigResponse);
+    rpc GetStatus (StatusRequest) returns (stream StatusResponse);
     rpc SendDeviceStatus (DeviceStatus) returns (DeviceStatusResponse);
 }
 
@@ -35,6 +36,23 @@ enum ApplicationAllowType {
     Never = 0;
     Daytime = 1;
     Always = 2;
+}
+
+message StatusRequest {
+}
+
+message StatusResponse {
+    ElectronicsMode mode = 1;
+    string location = 2;
+    bool isDayTime = 3;
+    double availableTime = 4;
+    bool hasIncompleteTasks = 5;
+}
+
+enum ElectronicsMode {
+    Restricted = 0;
+    Normal = 1;
+    Unrestricted = 2;
 }
 
 message DeviceStatus {

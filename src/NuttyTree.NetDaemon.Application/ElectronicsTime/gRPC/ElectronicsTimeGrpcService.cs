@@ -1,6 +1,8 @@
 ﻿using Grpc.Core;
 using Microsoft.Extensions.Options;
 using NuttyTree.NetDaemon.Application.ElectronicsTime.Options;
+using NuttyTree.NetDaemon.Infrastructure.Extensions;
+using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 
 namespace NuttyTree.NetDaemon.Application.ElectronicsTime.gRPC;
 
@@ -8,9 +10,12 @@ internal sealed class ElectronicsTimeGrpcService : ElectronicsTimeGrpc.Electroni
 {
     private readonly IOptionsMonitor<ElectronicsTimeOptions> options;
 
-    public ElectronicsTimeGrpcService(IOptionsMonitor<ElectronicsTimeOptions> options)
+    private readonly IEntities homeAssistantEntities;
+
+    public ElectronicsTimeGrpcService(IOptionsMonitor<ElectronicsTimeOptions> options, IEntities homeAssistantEntities)
     {
         this.options = options;
+        this.homeAssistantEntities = homeAssistantEntities;
     }
 
     public override async Task GetApplicationConfig(ApplicationConfigRequest request, IServerStreamWriter<ApplicationConfigResponse> responseStream, ServerCallContext context)
@@ -40,6 +45,28 @@ internal sealed class ElectronicsTimeGrpcService : ElectronicsTimeGrpc.Electroni
 
             await updateConfigTrigger.Task;
             updateConfigTrigger = new TaskCompletionSource();
+        }
+    }
+
+    public override async Task GetStatus(StatusRequest request, IServerStreamWriter<StatusResponse> responseStream, ServerCallContext context)
+    {
+        var updateStatusTrigger = new TaskCompletionSource();
+        using var timer = new Timer(_ => updateStatusTrigger.TrySetResult(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+
+        while (!context.CancellationToken.IsCancellationRequested)
+        {
+            var response = new StatusResponse
+            {
+                Mode = homeAssistantEntities.InputSelect.MaysonElectronicsMode.EntityState.AsEnum<ElectronicsMode>() ?? ElectronicsMode.Restricted,
+                Location = homeAssistantEntities.DeviceTracker.PhoneMayson.State,
+                IsDayTime = DateTime.Now.Hour >= 8 && DateTime.Now.Hour < 21,
+                AvailableTime = homeAssistantEntities.Sensor.MaysonAvailableTime.State ?? 0,
+                HasIncompleteTasks = homeAssistantEntities.Todo.Mayson.EntityState.AsInt() > 0 || homeAssistantEntities.Todo.MaysonReview.EntityState.AsInt() > 0,
+            };
+            await responseStream.WriteAsync(response, context.CancellationToken);
+
+            await updateStatusTrigger.Task;
+            updateStatusTrigger = new TaskCompletionSource();
         }
     }
 
