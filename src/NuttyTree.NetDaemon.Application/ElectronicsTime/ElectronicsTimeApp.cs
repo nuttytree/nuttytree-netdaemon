@@ -245,9 +245,9 @@ internal sealed class ElectronicsTimeApp : IDisposable
                     : lastOccurence?.CreatedAt.ToLocalTime() ?? DateTime.MinValue;
                 var nextOccurenceDate = recurringItem.RecurringToDoListItemType switch
                 {
-                    RecurringToDoListItemType.Daily => lastOccurenceAt < today ? today : tomorrow,
-                    RecurringToDoListItemType.Weekly => lastOccurenceAt < today && recurringItem.WeeklyDayOfWeek == dayOfWeek ? today : today.Next(recurringItem.WeeklyDayOfWeek),
-                    RecurringToDoListItemType.EveryXDays => lastOccurenceAt < today.AddDays(recurringItem.DaysBetween * -1) ? today : lastOccurenceAt.AddDays(recurringItem.DaysBetween).Date,
+                    RecurringToDoListItemType.Daily => lastOccurenceAt < today && recurringItem.StartAt >= currentTime ? today : tomorrow,
+                    RecurringToDoListItemType.Weekly => lastOccurenceAt < today && recurringItem.WeeklyDayOfWeek == dayOfWeek && recurringItem.StartAt >= currentTime ? today : today.Next(recurringItem.WeeklyDayOfWeek),
+                    RecurringToDoListItemType.EveryXDays => lastOccurenceAt < today.AddDays(recurringItem.DaysBetween * -1) && recurringItem.StartAt >= currentTime ? today : lastOccurenceAt.AddDays(recurringItem.DaysBetween).Date,
                     _ => DateTime.MinValue,
                 };
                 recurringItem.NextOccurrence = nextOccurenceDate == DateTime.MinValue
