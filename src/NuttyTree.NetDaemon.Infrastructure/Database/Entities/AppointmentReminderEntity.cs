@@ -1,4 +1,6 @@
-﻿namespace NuttyTree.NetDaemon.Infrastructure.Database.Entities;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace NuttyTree.NetDaemon.Infrastructure.Database.Entities;
 
 public sealed class AppointmentReminderEntity
 {
@@ -8,12 +10,14 @@ public sealed class AppointmentReminderEntity
         Type = type;
     }
 
+    [MaxLength(100)]
     public string Id { get; set; }
 
     public ReminderType Type { get; set; }
 
     public int? ArriveLeadMinutes { get; set; }
 
+    [MaxLength(100)]
     public string? AnnouncementTypes { get; set; }
 
     public int? NextAnnouncementType { get; set; }

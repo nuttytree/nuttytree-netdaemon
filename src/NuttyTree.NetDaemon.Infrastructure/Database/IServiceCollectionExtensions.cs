@@ -11,9 +11,8 @@ public static class IServiceCollectionExtensions
         return services
             .AddDbContext<NuttyDbContext>((serviceProvider, optionsBuilder) =>
             {
-                var dataFolder = serviceProvider.GetRequiredService<IConfiguration>().GetValue<string>("DataFolder");
-                var dataFile = Path.Join(dataFolder, "netdaemon.db");
-                optionsBuilder.UseSqlite($"Data Source={dataFile}");
+                var connectionString = serviceProvider.GetRequiredService<IConfiguration>().GetValue<string>("DatabaseConnection");
+                optionsBuilder.UseSqlServer(connectionString);
             });
     }
 }

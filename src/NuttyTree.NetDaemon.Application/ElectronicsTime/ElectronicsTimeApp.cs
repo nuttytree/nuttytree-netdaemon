@@ -295,8 +295,8 @@ internal sealed class ElectronicsTimeApp : IDisposable
                 ? (recurringToDoListItem.NextOccurrence ?? utcNow) + recurringToDoListItem.ExpiresAfter
                 : DateTime.MaxValue,
         });
+        await dbContext.SaveChangesAsync(cancellationToken);
         recurringToDoListItem.NextOccurrence = null;
         logger.LogInformation("Added new to do list item {ToDoListItem}", recurringToDoListItem.Name);
-        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

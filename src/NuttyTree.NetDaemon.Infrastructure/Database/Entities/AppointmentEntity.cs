@@ -1,4 +1,6 @@
-﻿namespace NuttyTree.NetDaemon.Infrastructure.Database.Entities;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace NuttyTree.NetDaemon.Infrastructure.Database.Entities;
 
 public sealed class AppointmentEntity
 {
@@ -22,14 +24,19 @@ public sealed class AppointmentEntity
         IsAllDay = isAllDay;
     }
 
+    [MaxLength(100)]
     public string Id { get; set; }
 
+    [MaxLength(100)]
     public string Calendar { get; set; }
 
+    [MaxLength(100)]
     public string Summary { get; set; }
 
+    [MaxLength(2000)]
     public string? Description { get; set; }
 
+    [MaxLength(100)]
     public string? Location { get; set; }
 
     public DateTime StartDateTime { get; set; }
@@ -38,6 +45,7 @@ public sealed class AppointmentEntity
 
     public bool IsAllDay { get; set; }
 
+    [MaxLength(20)]
     public string? Person { get; set; }
 
     public double? Latitude { get; set; }
