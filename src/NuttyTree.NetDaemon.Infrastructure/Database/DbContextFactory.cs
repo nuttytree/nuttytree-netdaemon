@@ -9,8 +9,8 @@ public sealed class MessagingContextFactory : IDesignTimeDbContextFactory<NuttyD
     public NuttyDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<NuttyDbContext>();
-        optionsBuilder.UseSqlite(
-            "Data Source=./Data/netdaemon.db",
+        optionsBuilder.UseSqlServer(
+            "server=(localdb)\\mssqllocaldb;database=NetDaemon;trusted_connection=yes",
             opt => opt.MigrationsAssembly(typeof(NuttyDbContext).GetTypeInfo().Assembly.GetName().Name));
 
         return new NuttyDbContext(optionsBuilder.Options);
