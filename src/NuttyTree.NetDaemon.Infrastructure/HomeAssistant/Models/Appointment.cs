@@ -13,8 +13,8 @@ public sealed class Appointment
         Summary = summary;
         Description = description;
         Location = location;
-        Start = start;
-        End = end;
+        Start = start.ToUniversalTime();
+        End = end.ToUniversalTime();
     }
 
     public string Id => id ?? throw new InvalidOperationException("The calendar of this appointment is not set yet");
