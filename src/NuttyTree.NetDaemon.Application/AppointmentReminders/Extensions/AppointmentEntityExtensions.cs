@@ -56,19 +56,24 @@ internal static class AppointmentEntityExtensions
 
     public static bool HasChanged(this AppointmentEntity existing, Appointment updated)
     {
-        return
-            existing.Id == updated.Id
-            && (existing.Description != updated.Description || existing.EndDateTime != updated.End || existing.IsAllDay != updated.GetIsAllDay());
+        if (existing.Id != updated.Id)
+        {
+            throw new InvalidOperationException("Not the same appointment");
+        }
+
+        return existing.Description != updated.Description || existing.EndDateTime != updated.End;
     }
 
     public static AppointmentEntity Update(this AppointmentEntity existing, Appointment updated)
     {
-        if (existing.Id == updated.Id)
+        if (existing.Id != updated.Id)
         {
-            existing.Description = updated.Description;
-            existing.EndDateTime = updated.End;
-            existing.IsAllDay = updated.GetIsAllDay();
+            throw new InvalidOperationException("Not the same appointment");
         }
+
+        existing.Description = updated.Description;
+        existing.EndDateTime = updated.End;
+        existing.IsAllDay = updated.IsAllDay;
 
         return existing;
     }

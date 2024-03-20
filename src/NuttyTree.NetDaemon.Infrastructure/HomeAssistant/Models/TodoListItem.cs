@@ -13,14 +13,14 @@ public sealed class TodoListItem
         Due = due;
     }
 
-    public Guid Uid { get; set; }
+    public Guid Uid { get; }
 
-    public string Summary { get; set; }
+    public string Summary { get; }
 
-    public string Description { get; set; }
+    public string Description { get; }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public ToDoListItemStatus Status { get; set; }
+    public ToDoListItemStatus Status { get; }
 
-    public DateTime? Due { get; set; }
+    public DateTime? Due { get; }
 }

@@ -99,7 +99,7 @@ internal sealed class AppointmentRemindersApp : IDisposable
                     .Where(a => !string.IsNullOrWhiteSpace(a.Location))
                     .ToList();
                 var appointments = await dbContext.Appointments
-                    .Where(a => a.Calendar == calendar.FriendlyName())
+                    .Where(a => a.Calendar == calendar.EntityId)
                     .Include(a => a.Reminders)
                     .ToListAsync(cancellationToken);
 

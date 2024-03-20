@@ -33,7 +33,7 @@ public static class TodoEntityExtensions
             "todo",
             "get_items",
             entity.ToServiceTarget(),
-            new { status = $"{status}" });
+            status == null ? new { } : new { status = $"{status}" });
         return response == null
             ? Array.Empty<TodoListItem>()
             : JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, ICollection<TodoListItem>>>>(response.Value, SerializerOptions) !.First().Value["items"];
