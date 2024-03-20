@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
 using NuttyTree.NetDaemon.ExternalServices.Waze.Models;
 using NuttyTree.NetDaemon.Infrastructure.Database.Entities;
@@ -208,7 +209,7 @@ internal static class AppointmentEntityExtensions
             }
         }
 
-        if (appointment.Calendar == ScoutsCalendar && appointment.Summary.Contains("cancel", StringComparison.OrdinalIgnoreCase))
+        if (appointment.Calendar == ScoutsCalendar && !string.IsNullOrWhiteSpace(options.IgnoreScoutsAppointmntRegex) && new Regex(options.IgnoreScoutsAppointmntRegex).IsMatch(appointment.Summary))
         {
             startReminder.Cancel();
             endReminder.Cancel();
