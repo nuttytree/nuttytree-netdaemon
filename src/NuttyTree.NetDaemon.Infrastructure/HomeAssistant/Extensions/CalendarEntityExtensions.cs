@@ -11,9 +11,6 @@ public static class CalendarEntityExtensions
         PropertyNameCaseInsensitive = true,
     };
 
-    public static string FriendlyName(this CalendarEntity entity)
-        => entity?.Attributes?.FriendlyName ?? entity?.EntityId ?? throw new ArgumentNullException(nameof(entity));
-
     public static Task<IList<Appointment>> GetEventsAsync(this CalendarEntity entity, DateTime start, TimeSpan duration)
         => GetEventsAsync(entity, start, start.Add(duration));
 
@@ -27,7 +24,7 @@ public static class CalendarEntityExtensions
         var appointments = response == null
             ? new List<Appointment>()
             : JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, List<Appointment>>>>(response.Value, SerializerOptions) !.First().Value["events"];
-        appointments.ForEach(a => a.Calendar = entity.FriendlyName());
+        appointments.ForEach(a => a.SetCalendar(entity.EntityId));
         return appointments;
     }
 }

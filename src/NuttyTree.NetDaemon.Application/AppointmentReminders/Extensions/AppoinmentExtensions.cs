@@ -12,9 +12,6 @@ internal static partial class AppoinmentExtensions
 
     private static readonly Regex StripFormattingRegex = GetStripFormattingRegex();
 
-    public static bool GetIsAllDay(this Appointment appointment)
-        => appointment.Start.Hour == 0 && appointment.Start.Minute == 0 && appointment.End.Hour == 23 && appointment.End.Minute >= 55;
-
     public static AppointmentEntity ToAppointmentEntity(this Appointment appointment)
         => new (
             appointment.Id,
@@ -24,7 +21,7 @@ internal static partial class AppoinmentExtensions
             appointment.Location,
             appointment.Start,
             appointment.End,
-            appointment.GetIsAllDay())
+            appointment.IsAllDay)
         {
             Reminders = new List<AppointmentReminderEntity>
             {
