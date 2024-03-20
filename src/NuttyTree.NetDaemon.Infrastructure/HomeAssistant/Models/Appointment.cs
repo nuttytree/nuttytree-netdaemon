@@ -42,7 +42,7 @@ public sealed class Appointment
 
         Calendar = calendar;
 
-        var data = SHA256.HashData(Encoding.UTF8.GetBytes($"{Calendar}.{Summary}.{Location}.{Start}")).ToList();
+        var data = SHA256.HashData(Encoding.UTF8.GetBytes($"{Calendar}.{Summary}.{Location}.{Start:u}")).ToList();
         var stringBuilder = new StringBuilder();
         data.ForEach(b => stringBuilder.Append(b.ToString("x2", CultureInfo.InvariantCulture)));
         id = stringBuilder.ToString();
