@@ -1,10 +1,10 @@
 ﻿using System.Text.RegularExpressions;
-using NuttyTree.NetDaemon.ExternalServices.HomeAssistantCalendar.Models;
 using NuttyTree.NetDaemon.Infrastructure.Database.Entities;
+using NuttyTree.NetDaemon.Infrastructure.HomeAssistant.Models;
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Extensions;
 
-internal static partial class HomeAssistantAppoinmentExtensions
+internal static partial class AppoinmentExtensions
 {
     private static readonly Regex TagWhiteSpaceRegex = GetTagWhiteSpaceRegex();
 
@@ -12,25 +12,18 @@ internal static partial class HomeAssistantAppoinmentExtensions
 
     private static readonly Regex StripFormattingRegex = GetStripFormattingRegex();
 
-    public static DateTime GetStartDateTime(this HomeAssistantAppointment appointment)
-        => (appointment.Start?.DateTime ?? appointment.Start?.Date ?? DateTime.MinValue).ToUniversalTime();
+    public static bool GetIsAllDay(this Appointment appointment)
+        => appointment.Start.Hour == 0 && appointment.Start.Minute == 0 && appointment.End.Hour == 23 && appointment.End.Minute >= 55;
 
-    public static DateTime? GetEndDateTime(this HomeAssistantAppointment appointment)
-        => (appointment.End?.DateTime ?? appointment.End?.Date)?.ToUniversalTime();
-
-    public static bool GetIsAllDay(this HomeAssistantAppointment appointment)
-        => appointment.Start?.DateTime == null
-            || (appointment.Start?.DateTime?.Hour == 0 && appointment.Start?.DateTime?.Minute == 0 && appointment.End?.DateTime?.Hour == 23 && appointment.End?.DateTime?.Minute >= 55);
-
-    public static AppointmentEntity ToAppointmentEntity(this HomeAssistantAppointment appointment, string calendar)
+    public static AppointmentEntity ToAppointmentEntity(this Appointment appointment)
         => new (
             appointment.Id,
-            calendar,
+            appointment.Calendar,
             appointment.Summary!,
             HtmlToPlainText(appointment.Description),
             appointment.Location,
-            appointment.GetStartDateTime(),
-            appointment.GetEndDateTime(),
+            appointment.Start,
+            appointment.End,
             appointment.GetIsAllDay())
         {
             Reminders = new List<AppointmentReminderEntity>

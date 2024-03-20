@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
-using NuttyTree.NetDaemon.ExternalServices.HomeAssistantCalendar.Models;
 using NuttyTree.NetDaemon.ExternalServices.Waze.Models;
 using NuttyTree.NetDaemon.Infrastructure.Database.Entities;
+using NuttyTree.NetDaemon.Infrastructure.HomeAssistant.Models;
 using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentConstants;
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Extensions;
@@ -54,19 +54,19 @@ internal static class AppointmentEntityExtensions
         return maybeValue != null;
     }
 
-    public static bool HasChanged(this AppointmentEntity existing, HomeAssistantAppointment updated)
+    public static bool HasChanged(this AppointmentEntity existing, Appointment updated)
     {
         return
             existing.Id == updated.Id
-            && (existing.Description != updated.Description || existing.EndDateTime != updated.GetEndDateTime() || existing.IsAllDay != updated.GetIsAllDay());
+            && (existing.Description != updated.Description || existing.EndDateTime != updated.End || existing.IsAllDay != updated.GetIsAllDay());
     }
 
-    public static AppointmentEntity Update(this AppointmentEntity existing, HomeAssistantAppointment updated)
+    public static AppointmentEntity Update(this AppointmentEntity existing, Appointment updated)
     {
         if (existing.Id == updated.Id)
         {
             existing.Description = updated.Description;
-            existing.EndDateTime = updated.GetEndDateTime();
+            existing.EndDateTime = updated.End;
             existing.IsAllDay = updated.GetIsAllDay();
         }
 

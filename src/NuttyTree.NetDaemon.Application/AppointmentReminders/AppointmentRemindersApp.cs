@@ -7,12 +7,12 @@ using NuttyTree.NetDaemon.Application.Announcements.Models;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.Extensions;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.Models;
 using NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
-using NuttyTree.NetDaemon.ExternalServices.HomeAssistantCalendar;
 using NuttyTree.NetDaemon.ExternalServices.Waze;
 using NuttyTree.NetDaemon.ExternalServices.Waze.Models;
 using NuttyTree.NetDaemon.Infrastructure.Database;
 using NuttyTree.NetDaemon.Infrastructure.Database.Entities;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
+using NuttyTree.NetDaemon.Infrastructure.HomeAssistant.Extensions;
 using NuttyTree.NetDaemon.Infrastructure.Scheduler;
 using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentConstants;
 
@@ -27,7 +27,7 @@ internal sealed class AppointmentRemindersApp : IDisposable
 
     private readonly IServiceScopeFactory serviceScopeFactory;
 
-    private readonly IHomeAssistantCalendarApi homeAssistantCalendar;
+    private readonly IEntities homeAssistantEntities;
 
     private readonly IWazeTravelTimes wazeTravelTimes;
 
@@ -51,7 +51,7 @@ internal sealed class AppointmentRemindersApp : IDisposable
         IOptions<AppointmentRemindersOptions> options,
         ITaskScheduler taskScheduler,
         IServiceScopeFactory serviceScopeFactory,
-        IHomeAssistantCalendarApi homeAssistantCalendar,
+        IEntities homeAssistantEntities,
         IWazeTravelTimes wazeTravelTimes,
         IAnnouncementsService announcementsService,
         IHaContext haContext,
@@ -62,7 +62,7 @@ internal sealed class AppointmentRemindersApp : IDisposable
         this.options = options.Value;
         this.taskScheduler = taskScheduler;
         this.serviceScopeFactory = serviceScopeFactory;
-        this.homeAssistantCalendar = homeAssistantCalendar;
+        this.homeAssistantEntities = homeAssistantEntities;
         this.wazeTravelTimes = wazeTravelTimes;
         this.announcementsService = announcementsService;
         this.homeAssistantServices = homeAssistantServices;
@@ -92,14 +92,14 @@ internal sealed class AppointmentRemindersApp : IDisposable
         {
             using var scope = serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<NuttyDbContext>();
-            foreach (var calendar in new[] { FamilyCalendar, ScoutsCalendar })
+            foreach (var calendar in new[] { homeAssistantEntities.Calendar.Family, homeAssistantEntities.Calendar.Troop479 })
             {
-                var homeAssistantAppointments = (await homeAssistantCalendar
-                    .GetAppointmentsAsync(calendar, DateTime.Now.AddHours(-1), DateTime.Now.AddDays(30), cancellationToken))
+                var homeAssistantAppointments = (await calendar
+                    .GetEventsAsync(DateTime.Now.AddHours(-1), TimeSpan.FromDays(30)))
                     .Where(a => !string.IsNullOrWhiteSpace(a.Location))
                     .ToList();
                 var appointments = await dbContext.Appointments
-                    .Where(a => a.Calendar == calendar)
+                    .Where(a => a.Calendar == calendar.FriendlyName())
                     .Include(a => a.Reminders)
                     .ToListAsync(cancellationToken);
 
@@ -119,7 +119,7 @@ internal sealed class AppointmentRemindersApp : IDisposable
                         logger.LogInformation(
                             "Found updated appointment {AppointmentSummary} at {AppointmentStart} in Home Assistant",
                             homeAssistantAppointment.Summary,
-                            homeAssistantAppointment.GetStartDateTime());
+                            homeAssistantAppointment.Start);
 
                         appointment.Update(homeAssistantAppointment);
                         appointment.SetAppointmentPerson();
@@ -136,9 +136,9 @@ internal sealed class AppointmentRemindersApp : IDisposable
                     logger.LogInformation(
                         "Found new appointment {AppointmentSummary} at {AppointmentStart} in Home Assistant",
                         homeAssistantAppointment.Summary,
-                        homeAssistantAppointment.GetStartDateTime());
+                        homeAssistantAppointment.Start);
 
-                    var appointment = homeAssistantAppointment.ToAppointmentEntity(calendar);
+                    var appointment = homeAssistantAppointment.ToAppointmentEntity();
                     appointment.SetAppointmentPerson();
                     appointment.SetLocationCoordinates(appointment.GetKnownLocationCoordinates(options)
                         ?? (await wazeTravelTimes.GetAddressLocationFromAddressAsync(appointment.Location))?.Location
