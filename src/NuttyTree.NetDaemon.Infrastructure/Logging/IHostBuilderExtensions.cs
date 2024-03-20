@@ -16,7 +16,7 @@ public static class IHostBuilderExtensions
             config.MinimumLevel.Override("Microsoft.Hosting", LogEventLevel.Warning);
             config.WriteTo.Async(sinkConfig =>
             {
-                sinkConfig.Console(formatProvider: CultureInfo.CurrentCulture);
+                sinkConfig.Console(formatProvider: CultureInfo.CurrentCulture, outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}");
             });
         });
     }
