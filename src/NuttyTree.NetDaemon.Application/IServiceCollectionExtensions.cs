@@ -4,7 +4,6 @@ using NuttyTree.NetDaemon.Application.Announcements;
 using NuttyTree.NetDaemon.Application.AppointmentReminders;
 using NuttyTree.NetDaemon.Application.ElectronicsTime.Extensions;
 using NuttyTree.NetDaemon.ExternalServices.Frigate;
-using NuttyTree.NetDaemon.ExternalServices.HomeAssistantCalendar;
 using NuttyTree.NetDaemon.ExternalServices.RandomWords;
 using NuttyTree.NetDaemon.ExternalServices.Waze;
 using NuttyTree.NetDaemon.Infrastructure.Database;
@@ -27,7 +26,6 @@ public static class IServiceCollectionExtensions
 
         // External Services
         services
-            .AddHomeAssistantCalendar()
             .AddRandomWords()
             .AddWaze()
             .AddFrigate();
