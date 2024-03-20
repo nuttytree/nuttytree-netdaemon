@@ -10,6 +10,8 @@ internal sealed class AppointmentRemindersOptions
 
     public LocationCoordinates? HomeLocation { get; set; }
 
+    public string? IgnoreScoutsAppointmntRegex { get; set; }
+
     public int MaxReminderMiles { get; set; } = 100;
 
     public int DefaultStartLeadMinutes { get; set; } = 5;

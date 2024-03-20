@@ -114,7 +114,25 @@ internal sealed class AppointmentRemindersApp : IDisposable
                 foreach (var homeAssistantAppointment in homeAssistantAppointments)
                 {
                     var appointment = appointments.FirstOrDefault(a => a.Id == homeAssistantAppointment.Id);
-                    if (appointment?.HasChanged(homeAssistantAppointment) == true)
+                    if (appointment == null)
+                    {
+                        logger.LogInformation(
+                            "Found new appointment {AppointmentSummary} at {AppointmentStart} in Home Assistant",
+                            homeAssistantAppointment.Summary,
+                            homeAssistantAppointment.Start);
+
+                        appointment = homeAssistantAppointment.ToAppointmentEntity();
+                        appointment.SetAppointmentPerson();
+                        appointment.SetLocationCoordinates(appointment.GetKnownLocationCoordinates(options)
+                            ?? (await wazeTravelTimes.GetAddressLocationFromAddressAsync(appointment.Location))?.Location
+                            ?? LocationCoordinates.Empty);
+                        appointment.SetAppointmentReminderOptions(options);
+
+                        dbContext.Appointments.Add(appointment);
+                        await dbContext.SaveChangesAsync(cancellationToken);
+                        travelTimeUpdatesTask.Trigger();
+                    }
+                    else if (appointment.HasChanged(homeAssistantAppointment))
                     {
                         logger.LogInformation(
                             "Found updated appointment {AppointmentSummary} at {AppointmentStart} in Home Assistant",
@@ -128,26 +146,6 @@ internal sealed class AppointmentRemindersApp : IDisposable
                         await dbContext.SaveChangesAsync(cancellationToken);
                         travelTimeUpdatesTask.Trigger();
                     }
-                }
-
-                foreach (var homeAssistantAppointment in homeAssistantAppointments
-                    .Where(h => !appointments.Any(a => a.Id == h.Id)))
-                {
-                    logger.LogInformation(
-                        "Found new appointment {AppointmentSummary} at {AppointmentStart} in Home Assistant",
-                        homeAssistantAppointment.Summary,
-                        homeAssistantAppointment.Start);
-
-                    var appointment = homeAssistantAppointment.ToAppointmentEntity();
-                    appointment.SetAppointmentPerson();
-                    appointment.SetLocationCoordinates(appointment.GetKnownLocationCoordinates(options)
-                        ?? (await wazeTravelTimes.GetAddressLocationFromAddressAsync(appointment.Location))?.Location
-                        ?? LocationCoordinates.Empty);
-                    appointment.SetAppointmentReminderOptions(options);
-
-                    dbContext.Appointments.Add(appointment);
-                    await dbContext.SaveChangesAsync(cancellationToken);
-                    travelTimeUpdatesTask.Trigger();
                 }
             }
         }
