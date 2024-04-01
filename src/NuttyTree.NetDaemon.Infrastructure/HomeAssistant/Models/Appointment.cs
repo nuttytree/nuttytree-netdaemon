@@ -11,8 +11,8 @@ public sealed class Appointment
     public Appointment(string summary, string? description, string? location, DateTime start, DateTime end)
     {
         Summary = summary;
-        Description = description;
-        Location = location;
+        Description = description ?? string.Empty;
+        Location = location ?? string.Empty;
         Start = start.ToUniversalTime();
         End = end.ToUniversalTime();
     }
@@ -23,9 +23,9 @@ public sealed class Appointment
 
     public string Summary { get; }
 
-    public string? Description { get; }
+    public string Description { get; }
 
-    public string? Location { get; }
+    public string Location { get; }
 
     public DateTime Start { get; }
 

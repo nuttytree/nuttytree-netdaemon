@@ -4,9 +4,9 @@ namespace NuttyTree.NetDaemon.Application.AppointmentReminders;
 
 internal static class AppointmentConstants
 {
-    public const string FamilyCalendar = "family";
+    public const string FamilyCalendarEntityId = "calendar.family";
 
-    public const string ScoutsCalendar = "troop_479";
+    public const string ScoutsCalendarEntityId = "calendar.troop_479";
 
     public const string Chris = nameof(Chris);
 

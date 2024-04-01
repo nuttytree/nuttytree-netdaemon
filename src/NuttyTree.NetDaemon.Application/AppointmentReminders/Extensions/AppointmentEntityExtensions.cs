@@ -81,7 +81,7 @@ internal static class AppointmentEntityExtensions
 
     public static void SetAppointmentPerson(this AppointmentEntity appointment)
     {
-        if (appointment.Calendar == ScoutsCalendar)
+        if (appointment.Calendar == ScoutsCalendarEntityId)
         {
             appointment.Person = Mayson;
         }
@@ -108,20 +108,20 @@ internal static class AppointmentEntityExtensions
 
     public static LocationCoordinates? GetKnownLocationCoordinates(this AppointmentEntity appointment, AppointmentRemindersOptions options)
     {
-        if (appointment.Calendar == FamilyCalendar &&
+        if (appointment.Calendar == FamilyCalendarEntityId &&
             (appointment.Location!.Replace(" ", string.Empty, StringComparison.Ordinal)
                 !.Contains(options.HomeAddress!.Replace(" ", string.Empty, StringComparison.Ordinal), StringComparison.OrdinalIgnoreCase)
                     || string.Equals(appointment.Location, "Home", StringComparison.OrdinalIgnoreCase)))
         {
             return options.HomeLocation;
         }
-        else if (appointment.Calendar == FamilyCalendar &&
+        else if (appointment.Calendar == FamilyCalendarEntityId &&
             appointment.Location!.Replace(" ", string.Empty, StringComparison.Ordinal)
                 !.Contains("RidgewoodChurch", StringComparison.OrdinalIgnoreCase))
         {
             return RidgewoodChurchLocation;
         }
-        else if (appointment.Calendar == ScoutsCalendar &&
+        else if (appointment.Calendar == ScoutsCalendarEntityId &&
             (appointment.Location!.Contains("Various Sites in EP", StringComparison.OrdinalIgnoreCase)
             || appointment.Location.Contains("Other or TBD", StringComparison.OrdinalIgnoreCase)
             || appointment.Location.Contains("Pax Christi", StringComparison.OrdinalIgnoreCase)))
@@ -129,7 +129,7 @@ internal static class AppointmentEntityExtensions
             // If any these values are in the location odds are it will be at the Church or somewhere close so drive time will be similar
             return DefaultScoutsLocation;
         }
-        else if (appointment.Calendar == ScoutsCalendar &&
+        else if (appointment.Calendar == ScoutsCalendarEntityId &&
             (appointment.Location!.Contains("Zoom", StringComparison.OrdinalIgnoreCase)
             || appointment.Location.Contains("Online", StringComparison.OrdinalIgnoreCase)))
         {
@@ -176,7 +176,7 @@ internal static class AppointmentEntityExtensions
         endReminder.SetDefaultAnnouncementTypes();
         endReminder.ArriveLeadMinutes ??= options.DefaultEndLeadMinutes;
 
-        if (appointment.Calendar == FamilyCalendar)
+        if (appointment.Calendar == FamilyCalendarEntityId)
         {
             if (appointment.TryGetOverrideValue("Reminders", out var reminders))
             {
@@ -209,7 +209,7 @@ internal static class AppointmentEntityExtensions
             }
         }
 
-        if (appointment.Calendar == ScoutsCalendar && !string.IsNullOrWhiteSpace(options.IgnoreScoutsAppointmntRegex) && new Regex(options.IgnoreScoutsAppointmntRegex).IsMatch(appointment.Summary))
+        if (appointment.Calendar == ScoutsCalendarEntityId && !string.IsNullOrWhiteSpace(options.IgnoreScoutsAppointmntRegex) && new Regex(options.IgnoreScoutsAppointmntRegex).IsMatch(appointment.Summary))
         {
             startReminder.Cancel();
             endReminder.Cancel();
