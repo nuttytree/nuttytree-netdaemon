@@ -33,7 +33,7 @@ public sealed class AppointmentEntity
     [MaxLength(100)]
     public string Summary { get; set; }
 
-    [MaxLength(2000)]
+    [MaxLength(4000)]
     public string? Description { get; set; }
 
     [MaxLength(100)]
