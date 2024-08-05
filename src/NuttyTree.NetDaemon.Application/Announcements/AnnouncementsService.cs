@@ -100,7 +100,6 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
                 nextAnnouncementAvailable.TrySetResult();
             });
             logger.LogInformation("Announcements disabled until {DisabledUntil}", disabledUntil);
-            haContext?.SetEntityState("binary_sensor.announcments_enabled", "off", new { until = $"{(minutes == int.MaxValue ? "Indefinitely" : disabledUntil)}" });
         }
     }
 
@@ -110,7 +109,6 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
         disabledUntil = null;
         nextAnnouncementAvailable.TrySetResult();
         logger.LogInformation("Announcements enabled");
-        haContext?.SetEntityState("binary_sensor.announcments_enabled", "on", new { });
     }
 
     public void SendAnnouncement(

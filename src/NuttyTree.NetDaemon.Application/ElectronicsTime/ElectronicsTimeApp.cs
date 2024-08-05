@@ -116,11 +116,18 @@ internal sealed class ElectronicsTimeApp : IDisposable
                     Name = completedItem.Summary,
                 });
 
-                var reviewItem = todoList.EntityId == maysonsToDoList.EntityId
-                    ? await maysonsReviewList.AddItemAsync($"{incompleteItem.Name}", description: $"{DateTime.Now:ddd h:mm tt}")
-                    : await maysonsOptionalReviewList.AddItemAsync($"{incompleteItem.Name}", $"{DateTime.Now:ddd h:mm tt}");
-                incompleteItem.ReviewUid = reviewItem.Uid;
-                incompleteItem.CompletedAt = DateTime.UtcNow;
+                if (stateChange.New?.Context?.UserId == chrisUserId)
+                {
+                    dbContext.ToDoListItems.Remove(incompleteItem);
+                }
+                else
+                {
+                    var reviewItem = todoList.EntityId == maysonsToDoList.EntityId
+                        ? await maysonsReviewList.AddItemAsync($"{incompleteItem.Name}", description: $"{DateTime.Now:ddd h:mm tt}")
+                        : await maysonsOptionalReviewList.AddItemAsync($"{incompleteItem.Name}", $"{DateTime.Now:ddd h:mm tt}");
+                    incompleteItem.ReviewUid = reviewItem.Uid;
+                    incompleteItem.CompletedAt = DateTime.UtcNow;
+                }
 
                 todoList.RemoveItem(completedItem.Uid);
             }
