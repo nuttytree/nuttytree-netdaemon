@@ -14,8 +14,8 @@ public static class TodoEntityExtensions
     public static async Task<TodoListItem> AddItemAsync(
         this TodoEntity entity,
         string item,
-        DateOnly? dueDate = null,
-        DateTime? dueDatetime = null,
+        object? dueDate = null,
+        object? dueDatetime = null,
         string? description = null,
         CancellationToken cancellationToken = default)
     {
@@ -44,8 +44,8 @@ public static class TodoEntityExtensions
         Guid uid,
         string? name = null,
         ToDoListItemStatus? status = null,
-        DateOnly? dueDate = null,
-        DateTime? dueDatetime = null,
+        object? dueDate = null,
+        object? dueDatetime = null,
         string? description = null)
     {
         entity.UpdateItem($"{uid}", name, $"{status}", dueDate, dueDatetime, description);
