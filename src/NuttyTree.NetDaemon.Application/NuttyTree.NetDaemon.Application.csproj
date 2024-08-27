@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="FluentDateTime" Version="3.0.0" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.65.0" />
-    <PackageReference Include="NetDaemon.AppModel" Version="24.28.1" />
+    <PackageReference Include="NetDaemon.AppModel" Version="24.35.0" />
     <PackageReference Include="NetDaemon.Runtime" Version="24.28.1" />
     <PackageReference Include="NetDaemon.Client" Version="24.28.1" />
     <PackageReference Include="NetDaemon.Extensions.Scheduling" Version="24.28.1" />
