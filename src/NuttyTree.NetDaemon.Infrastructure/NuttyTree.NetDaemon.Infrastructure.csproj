@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PrepareForBuild">
-    <Exec Command="dotnet tool update -g NetDaemon.HassModel.CodeGen --version 24.28.1" />
+    <Exec Command="dotnet tool update -g NetDaemon.HassModel.CodeGen" />
     <Exec Command="nd-codegen -o ../NuttyTree.NetDaemon.Infrastructure/HomeAssistant/EntitiesAndServices.cs -ns NuttyTree.NetDaemon.Infrastructure.HomeAssistant" WorkingDirectory="..\NuttyTree.NetDaemon" />
 
     <ItemGroup>
