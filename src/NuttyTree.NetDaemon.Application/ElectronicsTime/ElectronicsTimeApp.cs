@@ -124,7 +124,7 @@ internal sealed class ElectronicsTimeApp : IDisposable
                 {
                     var reviewItem = todoList.EntityId == maysonsToDoList.EntityId
                         ? await maysonsReviewList.AddItemAsync($"{incompleteItem.Name}", description: $"{DateTime.Now:ddd h:mm tt}")
-                        : await maysonsOptionalReviewList.AddItemAsync($"{incompleteItem.Name}", $"{DateTime.Now:ddd h:mm tt}");
+                        : await maysonsOptionalReviewList.AddItemAsync($"{incompleteItem.Name}", description: "{DateTime.Now:ddd h:mm tt}");
                     incompleteItem.ReviewUid = reviewItem.Uid;
                     incompleteItem.CompletedAt = DateTime.UtcNow;
                 }
