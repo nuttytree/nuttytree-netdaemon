@@ -1,6 +1,8 @@
-﻿using Grpc.Core;
+﻿using FluentDateTime;
+using Grpc.Core;
 using Microsoft.Extensions.Options;
 using NuttyTree.NetDaemon.Application.ElectronicsTime.Options;
+using NuttyTree.NetDaemon.ExternalServices.HomeAssistantWebhook;
 using NuttyTree.NetDaemon.Infrastructure.Extensions;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 
@@ -12,10 +14,16 @@ internal sealed class ElectronicsTimeGrpcService : ElectronicsTimeGrpc.Electroni
 
     private readonly IEntities homeAssistantEntities;
 
-    public ElectronicsTimeGrpcService(IOptionsMonitor<ElectronicsTimeOptions> options, IEntities homeAssistantEntities)
+    private readonly IHomeAssistantWebhookApi homeAssistantWebhook;
+
+    public ElectronicsTimeGrpcService(
+        IOptionsMonitor<ElectronicsTimeOptions> options,
+        IEntities homeAssistantEntities,
+        IHomeAssistantWebhookApi homeAssistantWebhook)
     {
         this.options = options;
         this.homeAssistantEntities = homeAssistantEntities;
+        this.homeAssistantWebhook = homeAssistantWebhook;
     }
 
     public override async Task GetApplicationConfig(ApplicationConfigRequest request, IServerStreamWriter<ApplicationConfigResponse> responseStream, ServerCallContext context)
@@ -27,6 +35,7 @@ internal sealed class ElectronicsTimeGrpcService : ElectronicsTimeGrpc.Electroni
         {
             var response = new ApplicationConfigResponse
             {
+                AdminPassword = options.CurrentValue.AdminPassword,
                 Applications =
                 {
                     options.CurrentValue.Applications.Select(a => new Application
@@ -51,10 +60,16 @@ internal sealed class ElectronicsTimeGrpcService : ElectronicsTimeGrpc.Electroni
     public override async Task GetStatus(StatusRequest request, IServerStreamWriter<StatusResponse> responseStream, ServerCallContext context)
     {
         var updateStatusTrigger = new TaskCompletionSource();
-        using var timer = new Timer(_ => updateStatusTrigger.TrySetResult(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+        using var modeChange = homeAssistantEntities.InputSelect.MaysonElectronicsMode.StateChanges().Subscribe(_ => updateStatusTrigger.TrySetResult());
+        using var locationChange = homeAssistantEntities.DeviceTracker.PhoneMayson.StateChanges().Subscribe(_ => updateStatusTrigger.TrySetResult());
+        using var availableTimeChange = homeAssistantEntities.Sensor.MaysonAvailableTime.StateChanges().Subscribe(_ => updateStatusTrigger.TrySetResult());
+        using var tasksChange = homeAssistantEntities.Todo.Mayson.StateChanges().Subscribe(_ => updateStatusTrigger.TrySetResult());
 
         while (!context.CancellationToken.IsCancellationRequested)
         {
+            // We have to recreate the timer each time because the time to next daytime change can vary based on Daylight Saving Time
+            using var daytimeChange = new Timer(_ => updateStatusTrigger.TrySetResult(), null, GetTimeToNextDaytimeChange(), TimeSpan.MaxValue);
+
             var response = new StatusResponse
             {
                 Mode = homeAssistantEntities.InputSelect.MaysonElectronicsMode.EntityState.AsEnum<ElectronicsMode>() ?? ElectronicsMode.Restricted,
@@ -70,8 +85,37 @@ internal sealed class ElectronicsTimeGrpcService : ElectronicsTimeGrpc.Electroni
         }
     }
 
-    public override Task<DeviceStatusResponse> SendDeviceStatus(DeviceStatus request, ServerCallContext context)
+    public override async Task<DeviceStatusResponse> SendDeviceStatus(DeviceStatus request, ServerCallContext context)
     {
-        return Task.FromResult(new DeviceStatusResponse());
+        await homeAssistantWebhook.CallWebhookAsync(
+            options.CurrentValue.WebhookId,
+            new
+            {
+                request.CurrentApp,
+                request.CurrentPipApp,
+                IsUsingTime = options.CurrentValue.Applications.Any(a => a.RequiresTime && (a.Name == request.CurrentApp || a.Name == request.CurrentPipApp)),
+            },
+            context.CancellationToken);
+
+        return new DeviceStatusResponse();
+    }
+
+    private TimeSpan GetTimeToNextDaytimeChange()
+    {
+        var now = DateTime.Now;
+
+        var morning = now.At(8, 0);
+        if (now <= morning)
+        {
+            return morning - now;
+        }
+
+        var evening = now.At(21, 0);
+        if (now <= evening)
+        {
+            return evening - now;
+        }
+
+        return morning.NextDay() - now;
     }
 }

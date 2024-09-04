@@ -14,7 +14,8 @@ message ApplicationConfigRequest {
 }
 
 message ApplicationConfigResponse {
-    repeated Application applications = 1;
+    string adminPassword = 1;
+    repeated Application applications = 2;
 }
 
 message Application {

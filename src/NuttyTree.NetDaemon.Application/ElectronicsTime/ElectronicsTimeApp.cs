@@ -36,9 +36,9 @@ internal sealed class ElectronicsTimeApp : IDisposable
 
     private readonly string? chrisUserId;
 
-    private readonly List<IDisposable> toDoListUpdateTriggers = new List<IDisposable>();
+    private readonly List<IDisposable> toDoListUpdateTriggers = [];
 
-    private readonly List<IDisposable> taskTriggers = new List<IDisposable>();
+    private readonly List<IDisposable> taskTriggers = [];
 
     private readonly ITriggerableTask updateToDoListTask;
 
