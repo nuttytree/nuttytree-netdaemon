@@ -68,7 +68,7 @@ internal sealed class ElectronicsTimeGrpcService : ElectronicsTimeGrpc.Electroni
         while (!context.CancellationToken.IsCancellationRequested)
         {
             // We have to recreate the timer each time because the time to next daytime change can vary based on Daylight Saving Time
-            using var daytimeChange = new Timer(_ => updateStatusTrigger.TrySetResult(), null, GetTimeToNextDaytimeChange(), TimeSpan.MaxValue);
+            using var daytimeChange = new Timer(_ => updateStatusTrigger.TrySetResult(), null, GetTimeToNextDaytimeChange(), TimeSpan.FromDays(1));
 
             var response = new StatusResponse
             {
