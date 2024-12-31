@@ -5,7 +5,7 @@ namespace NuttyTree.NetDaemon.Infrastructure.RateLimiting;
 internal sealed class RateLimiter<T> : IDisposable, IRateLimiter<T>
     where T : class
 {
-    private readonly ConcurrentDictionary<string, InternalRateLimiter> rateLimiters = new ();
+    private readonly ConcurrentDictionary<string, InternalRateLimiter> rateLimiters = new();
 
     private readonly string defaultRateLimiterName = typeof(T).FullName!;
 
@@ -21,7 +21,7 @@ internal sealed class RateLimiter<T> : IDisposable, IRateLimiter<T>
         => WaitAsync(defaultRateLimiterName, null, cancellationToken);
 
     public Task WaitAsync(string rateLimiterName, TimeSpan? delayBetweenTasks, CancellationToken cancellationToken = default)
-        => rateLimiters.GetOrAdd(rateLimiterName, _ => new (delayBetweenTasks ?? DefaultDelayBetweenTasks)).WaitAsync(cancellationToken);
+        => rateLimiters.GetOrAdd(rateLimiterName, _ => new(delayBetweenTasks ?? DefaultDelayBetweenTasks)).WaitAsync(cancellationToken);
 
     public void Dispose()
     {
@@ -33,7 +33,7 @@ internal sealed class RateLimiter<T> : IDisposable, IRateLimiter<T>
 
     private sealed class InternalRateLimiter : IDisposable
     {
-        private readonly SemaphoreSlim semaphore = new (1, 1);
+        private readonly SemaphoreSlim semaphore = new(1, 1);
 
         private readonly TimeSpan delayBetweenTasks;
 

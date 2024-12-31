@@ -2,7 +2,7 @@
 
 namespace NuttyTree.NetDaemon.Extensions;
 
-public static class IHostBuilderExtensions
+internal static class IHostBuilderExtensions
 {
     public static IHostBuilder UseReloadableYamlAppSettings(this IHostBuilder hostBuilder)
     {
