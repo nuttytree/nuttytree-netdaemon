@@ -8,23 +8,17 @@ using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 
 namespace NuttyTree.NetDaemon.Application.ElectronicsTime.gRPC;
 
-internal sealed class ElectronicsTimeGrpcService : ElectronicsTimeGrpc.ElectronicsTimeGrpcBase
+internal sealed class ElectronicsTimeGrpcService(
+    IOptionsMonitor<ElectronicsTimeOptions> options,
+    IEntities homeAssistantEntities,
+    IHomeAssistantWebhookApi homeAssistantWebhook)
+        : ElectronicsTimeGrpc.ElectronicsTimeGrpcBase
 {
-    private readonly IOptionsMonitor<ElectronicsTimeOptions> options;
+    private readonly IOptionsMonitor<ElectronicsTimeOptions> options = options;
 
-    private readonly IEntities homeAssistantEntities;
+    private readonly IEntities homeAssistantEntities = homeAssistantEntities;
 
-    private readonly IHomeAssistantWebhookApi homeAssistantWebhook;
-
-    public ElectronicsTimeGrpcService(
-        IOptionsMonitor<ElectronicsTimeOptions> options,
-        IEntities homeAssistantEntities,
-        IHomeAssistantWebhookApi homeAssistantWebhook)
-    {
-        this.options = options;
-        this.homeAssistantEntities = homeAssistantEntities;
-        this.homeAssistantWebhook = homeAssistantWebhook;
-    }
+    private readonly IHomeAssistantWebhookApi homeAssistantWebhook = homeAssistantWebhook;
 
     public override async Task GetApplicationConfig(ApplicationConfigRequest request, IServerStreamWriter<ApplicationConfigResponse> responseStream, ServerCallContext context)
     {
@@ -75,7 +69,7 @@ internal sealed class ElectronicsTimeGrpcService : ElectronicsTimeGrpc.Electroni
                 Mode = homeAssistantEntities.InputSelect.MaysonElectronicsMode.EntityState.AsEnum<ElectronicsMode>() ?? ElectronicsMode.Restricted,
                 Location = homeAssistantEntities.DeviceTracker.PhoneMayson.State,
                 IsDayTime = DateTime.Now.Hour >= 8 && DateTime.Now.Hour < 21,
-                AvailableTime = homeAssistantEntities.Sensor.MaysonAvailableTime.State ?? 0,
+                AvailableTime = homeAssistantEntities.Sensor.MaysonAvailableTime.EntityState.AsInt() ?? 0,
                 HasIncompleteTasks = homeAssistantEntities.Todo.Mayson.EntityState.AsInt() > 0 || homeAssistantEntities.Todo.MaysonReview.EntityState.AsInt() > 0,
             };
             await responseStream.WriteAsync(response, context.CancellationToken);

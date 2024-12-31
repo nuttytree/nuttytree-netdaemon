@@ -173,17 +173,13 @@ public class AnnouncementsService_Tests
         haContext.Setup(x => x.Events)
             .Returns(eventsSubject);
 
-        var testPersonState = new EntityState();
-        var testPersonStateProperty = typeof(EntityState).GetProperty(nameof(EntityState.State));
-        testPersonStateProperty.SetValue(testPersonState, testPersonIsHome ? "home" : faker.Random.AlphaNumeric(10));
-        haContext.Setup(x => x.GetState($"person.{testPerson.ToLowerInvariant()}"))
-            .Returns(testPersonState);
-
         var entities = new Entities(haContext.Object);
-        haContext.Setup(x => x.GetState(entities.InputSelect.HouseMode.EntityId))
+        haContext.Setup(x => x.GetState(entities.Sensor.HouseMode.EntityId))
             .Returns(new EntityState { State = houseModeIsDay ? "Day" : faker.Random.AlphaNumeric(5) });
         haContext.Setup(x => x.GetState(entities.BinarySensor.MelissaIsInBed.EntityId))
             .Returns(new EntityState { State = melissaIsNotInBed ? "off" : "on" });
+        haContext.Setup(x => x.GetState($"person.{testPerson.ToLowerInvariant()}"))
+            .Returns(new EntityState { State = testPersonIsHome ? "home" : faker.Random.AlphaNumeric(10) });
 
         var haServices = new Services(haContext.Object);
 

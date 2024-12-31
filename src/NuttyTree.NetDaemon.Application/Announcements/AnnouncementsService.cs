@@ -7,12 +7,12 @@ namespace NuttyTree.NetDaemon.Application.Announcements;
 
 internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncementsInternalService, IDisposable
 {
-    private static readonly List<string> ReminderPrefixes = new List<string>
-    {
+    private static readonly List<string> ReminderPrefixes =
+    [
         "Just a friendly reminder",
         "Don't forget that",
         "Remember that",
-    };
+    ];
 
     //private static readonly List<string> WarningPrefixes = new List<string>
     //{
@@ -25,7 +25,7 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
     //    "Critical notice"
     //};
 
-    private readonly SynchronizedCollection<Announcement> announcements = new SynchronizedCollection<Announcement>();
+    private readonly SynchronizedCollection<Announcement> announcements = [];
 
     private readonly IRateLimiter<AnnouncementsService> rateLimiter;
 
@@ -63,7 +63,7 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
         this.haContext = haContext;
         this.homeAssistantServices = homeAssistantServices;
 
-        homeAssistantEntities.InputSelect.HouseMode.StateChanges().Subscribe(_ => HandleStateChanges());
+        homeAssistantEntities.Sensor.HouseMode.StateChanges().Subscribe(_ => HandleStateChanges());
         homeAssistantEntities.BinarySensor.MelissaIsInBed.StateChanges().Subscribe(_ => HandleStateChanges());
 
         haContext.RegisterServiceCallBack<AnnouncementRequest>(
@@ -137,7 +137,7 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
     private void HandleStateChanges()
     {
         if (homeAssistantEntities != null
-            && homeAssistantEntities.InputSelect.HouseMode.State.CaseInsensitiveEquals("Day")
+            && homeAssistantEntities.Sensor.HouseMode.State.CaseInsensitiveEquals("Day")
             && homeAssistantEntities.BinarySensor.MelissaIsInBed.IsOff())
         {
             EnableAnnouncements();
@@ -184,7 +184,7 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
                         if (disabledUntil == null || nextAnnouncement.Priority == AnnouncementPriority.Critical)
                         {
                             if (nextAnnouncement.Person == null
-                                || haContext?.Entity($"person.{nextAnnouncement.Person.ToLowerInvariant()}").State.CaseInsensitiveEquals("home") == true)
+                                || haContext?.GetState($"person.{nextAnnouncement.Person.ToLowerInvariant()}")?.State?.CaseInsensitiveEquals("home") == true)
                             {
                                 var message = nextAnnouncement.Type switch
                                 {
