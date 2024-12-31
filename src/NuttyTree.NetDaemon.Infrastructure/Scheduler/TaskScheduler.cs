@@ -67,11 +67,11 @@ internal sealed class TaskScheduler : ITaskScheduler
 
     private sealed class TriggerableTask : ITriggerableTask
     {
-        private readonly CancellationTokenSource stopRequested = new CancellationTokenSource();
+        private readonly CancellationTokenSource stopRequested = new();
 
         private CancellationTokenSource? nextRunTrigger;
 
-        private TaskCompletionSource nextRunDue = new TaskCompletionSource();
+        private TaskCompletionSource nextRunDue = new();
 
         internal CancellationToken StopRequestedToken => stopRequested.Token;
 

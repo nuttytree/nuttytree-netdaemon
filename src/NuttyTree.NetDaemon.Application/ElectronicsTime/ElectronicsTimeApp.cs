@@ -73,7 +73,7 @@ internal sealed class ElectronicsTimeApp : IDisposable
         {
             UpdateTaskTriggers();
             updateToDoListTask.Trigger();
-        }) !);
+        })!);
     }
 
     public void Dispose()

@@ -13,7 +13,7 @@ internal static partial class AppoinmentExtensions
     private static readonly Regex StripFormattingRegex = GetStripFormattingRegex();
 
     public static AppointmentEntity ToAppointmentEntity(this Appointment appointment)
-        => new (
+        => new(
             appointment.Id,
             appointment.Calendar,
             appointment.Summary!,
@@ -25,8 +25,8 @@ internal static partial class AppoinmentExtensions
         {
             Reminders = new List<AppointmentReminderEntity>
             {
-                new AppointmentReminderEntity($"{appointment.Id}-Start", ReminderType.Start),
-                new AppointmentReminderEntity($"{appointment.Id}-End", ReminderType.End),
+                new($"{appointment.Id}-Start", ReminderType.Start),
+                new($"{appointment.Id}-End", ReminderType.End),
             }
         };
 
