@@ -6,7 +6,7 @@ namespace NuttyTree.NetDaemon.Infrastructure.HomeAssistant.Extensions;
 
 public static class CalendarEntityExtensions
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions
+    private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         PropertyNameCaseInsensitive = true,
     };
@@ -16,15 +16,18 @@ public static class CalendarEntityExtensions
 
     public static async Task<IList<Appointment>> GetEventsAsync(this CalendarEntity entity, DateTime? start = null, DateTime? end = null)
     {
+        ArgumentNullException.ThrowIfNull(entity, nameof(entity));
+
         var response = await entity.HaContext.CallServiceWithResponseAsync(
             "calendar",
             "get_events",
             entity.ToServiceTarget(),
             new { start_date_time = $"{start ?? DateTime.Now:yyyy-MM-ddTH:mm:ssZ}", end_date_time = $"{end ?? DateTime.MaxValue:yyyy-MM-ddTH:mm:ssZ}" });
         var appointments = response == null
-            ? new List<Appointment>()
-            : JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, List<Appointment>>>>(response.Value, SerializerOptions) !.First().Value["events"];
+            ? []
+            : JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, List<Appointment>>>>(response.Value, SerializerOptions)!.First().Value["events"];
         appointments.ForEach(a => a.SetCalendar(entity.EntityId));
+
         return appointments;
     }
 }

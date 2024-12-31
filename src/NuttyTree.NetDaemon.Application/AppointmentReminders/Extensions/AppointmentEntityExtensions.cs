@@ -7,6 +7,7 @@ using NuttyTree.NetDaemon.Infrastructure.HomeAssistant.Models;
 using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentConstants;
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Extensions;
+
 internal static class AppointmentEntityExtensions
 {
     public static string? GetOverrideValue(this AppointmentEntity appointment, string valueName)

@@ -7,14 +7,9 @@ using Serilog;
 
 namespace NuttyTree.NetDaemon;
 
-public sealed class Startup
+internal sealed class Startup(IConfiguration configuration)
 {
-    public Startup(IConfiguration configuration)
-    {
-        Configuration = configuration;
-    }
-
-    public IConfiguration Configuration { get; set; }
+    public IConfiguration Configuration { get; set; } = configuration;
 
     public void ConfigureServices(IServiceCollection services)
     {

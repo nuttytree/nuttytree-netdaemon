@@ -45,7 +45,7 @@ internal sealed class AppointmentRemindersApp : IDisposable
 
     private readonly ITriggerableTask announcementsTask;
 
-    private TaskCompletionSource<AppointmentRemindersServiceType> serviceTrigger = new TaskCompletionSource<AppointmentRemindersServiceType>();
+    private TaskCompletionSource<AppointmentRemindersServiceType> serviceTrigger = new();
 
     public AppointmentRemindersApp(
         IOptions<AppointmentRemindersOptions> options,

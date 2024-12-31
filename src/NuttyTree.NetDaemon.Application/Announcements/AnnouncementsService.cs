@@ -39,7 +39,7 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
 
     private IServices? homeAssistantServices;
 
-    private TaskCompletionSource nextAnnouncementAvailable = new TaskCompletionSource();
+    private TaskCompletionSource nextAnnouncementAvailable = new();
 
     private CancellationTokenSource? delayedAnnouncementDue;
 

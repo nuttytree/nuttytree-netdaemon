@@ -6,7 +6,7 @@ namespace NuttyTree.NetDaemon.Infrastructure.Extensions;
 
 public static class TodoEntityExtensions
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions
+    private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         PropertyNameCaseInsensitive = true,
     };
@@ -36,7 +36,7 @@ public static class TodoEntityExtensions
             status == null ? new { } : new { status = $"{status}" });
         return response == null
             ? Array.Empty<TodoListItem>()
-            : JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, ICollection<TodoListItem>>>>(response.Value, SerializerOptions) !.First().Value["items"];
+            : JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, ICollection<TodoListItem>>>>(response.Value, SerializerOptions)!.First().Value["items"];
     }
 
     public static void UpdateItem(

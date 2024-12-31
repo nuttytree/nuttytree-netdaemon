@@ -6,7 +6,9 @@ using NuttyTree.NetDaemon.ExternalServices.HomeAssistantWebhook;
 using NuttyTree.NetDaemon.Infrastructure.Extensions;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 
+#pragma warning disable SA1300 // Element should begin with upper-case letter
 namespace NuttyTree.NetDaemon.Application.ElectronicsTime.gRPC;
+#pragma warning restore SA1300 // Element should begin with upper-case letter
 
 internal sealed class ElectronicsTimeGrpcService(
     IOptionsMonitor<ElectronicsTimeOptions> options,

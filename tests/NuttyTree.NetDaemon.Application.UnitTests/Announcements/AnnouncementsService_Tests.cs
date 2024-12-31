@@ -18,7 +18,7 @@ namespace NuttyTree.NetDaemon.Application.UnitTests.Announcements;
 
 public class AnnouncementsService_Tests
 {
-    private readonly Faker faker = new ();
+    private readonly Faker faker = new();
 
     private string testMessage;
 

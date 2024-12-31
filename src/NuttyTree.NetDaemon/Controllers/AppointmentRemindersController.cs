@@ -6,14 +6,9 @@ namespace NuttyTree.NetDaemon.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public sealed class AppointmentRemindersController : ControllerBase
+internal sealed class AppointmentRemindersController(NuttyDbContext dbContext) : ControllerBase
 {
-    private readonly NuttyDbContext dbContext;
-
-    public AppointmentRemindersController(NuttyDbContext dbContext)
-    {
-        this.dbContext = dbContext;
-    }
+    private readonly NuttyDbContext dbContext = dbContext;
 
     [HttpGet]
     public async Task<IActionResult> GetAppointmentsAsync()
