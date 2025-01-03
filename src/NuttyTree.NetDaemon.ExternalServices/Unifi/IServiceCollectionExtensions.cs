@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Net.Security;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NuttyTree.NetDaemon.ExternalServices.Unifi.Options;
 using Refit;
@@ -17,7 +18,13 @@ public static class IServiceCollectionExtensions
 
         services.AddRefitClient<IUnifiApi>()
             .AddHttpMessageHandler<UnifiAuthHandler>()
-            .ConfigureHttpClient((sp, c) => c.BaseAddress = sp.GetRequiredService<IOptionsMonitor<UnifiOptions>>().CurrentValue.Url);
+            .ConfigureHttpClient((sp, c) => c.BaseAddress = sp.GetRequiredService<IOptionsMonitor<UnifiOptions>>().CurrentValue.Url)
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+            {
+#pragma warning disable CA5359 // Do Not Disable Certificate Validation
+                SslOptions = new SslClientAuthenticationOptions { RemoteCertificateValidationCallback = (_, _, _, _) => true }
+#pragma warning restore CA5359 // Do Not Disable Certificate Validation
+            });
 
         return services;
     }
