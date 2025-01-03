@@ -1,56 +1,115 @@
-﻿using System.Globalization;
-using System.Security.Cryptography;
-using FluentDateTime;
-using Net.Codecrete.QrCodeGenerator;
-using NetDaemon.Extensions.Scheduler;
-using NuttyTree.NetDaemon.ExternalServices.RandomWords;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using Bogus;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using NuttyTree.NetDaemon.Application.GuestPasswordUpdate.Options;
+using NuttyTree.NetDaemon.ExternalServices.HomeAssistantWebhook;
+using NuttyTree.NetDaemon.ExternalServices.Unifi;
+using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 
 namespace NuttyTree.NetDaemon.Application.GuestPasswordUpdate
 {
-    //[NetDaemonApp]
+    [NetDaemonApp]
+    [Focus]
     internal sealed class GuestPasswordUpdateApp
     {
-        private const string GuestSSID = "NuttyHome-Guest";
+        private static readonly Faker Faker = new();
 
-        private readonly INetDaemonScheduler scheduler;
+        private readonly IOptionsMonitor<GuestPasswordUpdateOptions> options;
 
-        private readonly IRandomWordApi randomWordApi;
+        private readonly IHaContext haContext;
 
-        public GuestPasswordUpdateApp(INetDaemonScheduler scheduler, IRandomWordApi randomWordApi)
+        private readonly IUnifiApi unifiApi;
+
+        private readonly IHomeAssistantWebhookApi homeAssistantWebhookApi;
+
+        private readonly ILogger<GuestPasswordUpdateApp> logger;
+
+        private readonly IServices homeAssistantServices;
+
+        private readonly CancellationToken applicationStopping;
+
+        private string guestNetworkId = string.Empty;
+
+        private TaskCompletionSource serviceTrigger = new();
+
+        public GuestPasswordUpdateApp(
+            IOptionsMonitor<GuestPasswordUpdateOptions> options,
+            IHaContext haContext,
+            IUnifiApi unifiApi,
+            IHomeAssistantWebhookApi homeAssistantWebhookApi,
+            ILogger<GuestPasswordUpdateApp> logger,
+            IServices homeAssistantServices,
+            IHostApplicationLifetime applicationLifetime)
         {
-            this.scheduler = scheduler;
-            this.randomWordApi = randomWordApi;
+            this.options = options;
+            this.haContext = haContext;
+            this.unifiApi = unifiApi;
+            this.homeAssistantWebhookApi = homeAssistantWebhookApi;
+            this.homeAssistantServices = homeAssistantServices;
+            this.logger = logger;
+            applicationStopping = applicationLifetime.ApplicationStopping;
 
-            var nextMonday = new DateTimeOffset(DateTime.Now.Next(DayOfWeek.Monday).SetTime(2, 0, 0));
-#pragma warning disable VSTHRD101 // Avoid unsupported async delegates
-            scheduler.RunEvery(TimeSpan.FromDays(7), nextMonday, async () =>
+            _ = HandleServiceCallAsync();
+            haContext.RegisterServiceCallBack<object>(
+                "guest_network_update_password",
+                _ => serviceTrigger.TrySetResult());
+        }
+
+        [SuppressMessage("Usage", "VSTHRD003:Avoid awaiting foreign Tasks", Justification = "Not truly a foreign task")]
+        private async Task HandleServiceCallAsync()
+        {
+            while (!applicationStopping.IsCancellationRequested)
             {
-                await UpdatePasswordAsync();
-            });
-#pragma warning restore VSTHRD101 // Avoid unsupported async delegates
+                try
+                {
+                    await serviceTrigger.Task;
+                    serviceTrigger = new();
 
-            UpdatePasswordAsync().GetAwaiter().GetResult();
+                    logger.LogInformation("Service Update Guest Network Password was called");
+
+                    var password = GenerateNewPassword();
+
+                    await unifiApi.UpdateWirelessNetworkPassphraseAsync(await GetGuestNetworkIdAsync(), password, applicationStopping);
+
+                    await homeAssistantWebhookApi.CallWebhookAsync(options.CurrentValue.WebhookId!, new { Password = password }, applicationStopping);
+                }
+                catch (Exception ex)
+                {
+                    HandleException(ex, nameof(HandleServiceCallAsync));
+                }
+            }
         }
 
-        private async Task UpdatePasswordAsync()
+        private string GenerateNewPassword()
         {
-            var password = await GenerateNewPasswordAsync();
-            CreateQRCode(password);
-        }
-
-        private async Task<string> GenerateNewPasswordAsync()
-        {
-            var words = await randomWordApi.GetRandomWordsAsync(number: 2, length: 7);
             var textInfo = CultureInfo.CurrentCulture.TextInfo;
-            return $"{textInfo.ToTitleCase(words[0])}{textInfo.ToTitleCase(words[1])}{RandomNumberGenerator.GetInt32(1, 99):D2}";
+            return $"{textInfo.ToTitleCase(Faker.Hacker.Adjective())}{textInfo.ToTitleCase(Faker.Hacker.Noun())}{Faker.Random.Int(1, 99):D2}";
         }
 
-        private void CreateQRCode(string password)
+        private async Task<string> GetGuestNetworkIdAsync()
         {
-            var wifiText = $"WIFI:T:WPA;S:{GuestSSID};P:{password};;";
-            var qrCode = QrCode.EncodeText(wifiText, QrCode.Ecc.Medium);
-            var svg = qrCode.ToSvgString(3);
-            File.WriteAllText("test.svg", svg, Encoding.UTF8);
+            if (string.IsNullOrEmpty(guestNetworkId))
+            {
+                var networksResponse = await unifiApi.GetWirelessNetworksAsync(applicationStopping);
+                guestNetworkId = networksResponse.Content?.Data.FirstOrDefault(n => n.Name == options.CurrentValue.GuestNetwork)?.Id ?? string.Empty;
+            }
+
+            return guestNetworkId;
+        }
+
+        private void HandleException(Exception exception, string taskName)
+        {
+            logger.LogError(exception, "Exception in guest password update task: {TaskName}", taskName);
+            if (options.CurrentValue.NotificationOfExceptions)
+            {
+                homeAssistantServices.Notify.MobileAppPhoneChris(new NotifyMobileAppPhoneChrisParameters
+                {
+                    Title = $"Guest Password Update Exception: {taskName}",
+                    Message = exception.Message,
+                });
+            }
         }
     }
 }
