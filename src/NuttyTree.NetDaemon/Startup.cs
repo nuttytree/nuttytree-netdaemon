@@ -18,7 +18,7 @@ internal sealed class Startup(IConfiguration configuration)
             .AddNetDaemonStateManager()
             .AddNetDaemonScheduler();
 
-        services.AddApplication();
+        services.AddApplications();
 
         services.AddMvc();
 
