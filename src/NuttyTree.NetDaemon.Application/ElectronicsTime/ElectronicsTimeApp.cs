@@ -74,6 +74,15 @@ internal sealed class ElectronicsTimeApp : IDisposable
             UpdateTaskTriggers();
             updateToDoListTask.Trigger();
         })!);
+
+        // If Mayson's mode is changed by a person other than Chris change it to Restricted
+        homeAssistantEntities.InputSelect.MaysonElectronicsMode.StateChanges().Subscribe(c =>
+        {
+            if (c.New?.Context?.UserId != null && c.New.Context.UserId != chrisUserId)
+            {
+                c.Entity.SelectOption("Restricted");
+            }
+        });
     }
 
     public void Dispose()
