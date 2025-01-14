@@ -11,7 +11,6 @@ using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 namespace NuttyTree.NetDaemon.Application.GuestPasswordUpdate
 {
     [NetDaemonApp]
-    [Focus]
     internal sealed class GuestPasswordUpdateApp
     {
         private static readonly Faker Faker = new();
