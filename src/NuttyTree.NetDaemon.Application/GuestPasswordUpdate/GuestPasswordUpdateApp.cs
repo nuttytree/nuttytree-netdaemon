@@ -84,7 +84,9 @@ namespace NuttyTree.NetDaemon.Application.GuestPasswordUpdate
         private string GenerateNewPassword()
         {
             var textInfo = CultureInfo.CurrentCulture.TextInfo;
-            return $"{textInfo.ToTitleCase(Faker.Hacker.Adjective())}{textInfo.ToTitleCase(Faker.Hacker.Noun())}{Faker.Random.Int(1, 99):D2}";
+            return $"{textInfo.ToTitleCase(Faker.Hacker.Adjective())}{textInfo.ToTitleCase(Faker.Hacker.Noun())}{Faker.Random.Int(1, 99):D2}"
+                .Replace(" ", string.Empty, StringComparison.Ordinal)
+                .Replace("-", string.Empty, StringComparison.Ordinal);
         }
 
         private async Task<string> GetGuestNetworkIdAsync()
