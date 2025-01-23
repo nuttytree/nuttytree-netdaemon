@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Bogus;
+using Bogus.DataSets;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using NuttyTree.NetDaemon.Application.GuestPasswordUpdate.Options;
@@ -11,7 +13,7 @@ using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 namespace NuttyTree.NetDaemon.Application.GuestPasswordUpdate
 {
     [NetDaemonApp]
-    internal sealed class GuestPasswordUpdateApp
+    internal sealed partial class GuestPasswordUpdateApp
     {
         private static readonly Faker Faker = new();
 
@@ -56,6 +58,9 @@ namespace NuttyTree.NetDaemon.Application.GuestPasswordUpdate
                 _ => serviceTrigger.TrySetResult());
         }
 
+        [GeneratedRegex(@"^[a-zA-Z0-9]{5,}$")]
+        private static partial Regex ValidPassphraseWord();
+
         [SuppressMessage("Usage", "VSTHRD003:Avoid awaiting foreign Tasks", Justification = "Not truly a foreign task")]
         private async Task HandleServiceCallAsync()
         {
@@ -68,7 +73,7 @@ namespace NuttyTree.NetDaemon.Application.GuestPasswordUpdate
 
                     logger.LogInformation("Service Update Guest Network Password was called");
 
-                    var password = GenerateNewPassword();
+                    var password = $"{GetPassphraseWord(h => h.Adjective())}{GetPassphraseWord(h => h.Noun())}{Faker.Random.Int(1, 99):D2}";
 
                     await unifiApi.UpdateWirelessNetworkPassphraseAsync(await GetGuestNetworkIdAsync(), password, applicationStopping);
 
@@ -81,12 +86,16 @@ namespace NuttyTree.NetDaemon.Application.GuestPasswordUpdate
             }
         }
 
-        private string GenerateNewPassword()
+        private string GetPassphraseWord(Func<Hacker, string> generator)
         {
-            var textInfo = CultureInfo.CurrentCulture.TextInfo;
-            return $"{textInfo.ToTitleCase(Faker.Hacker.Adjective())}{textInfo.ToTitleCase(Faker.Hacker.Noun())}{Faker.Random.Int(1, 99):D2}"
-                .Replace(" ", string.Empty, StringComparison.Ordinal)
-                .Replace("-", string.Empty, StringComparison.Ordinal);
+            var word = generator(Faker.Hacker);
+
+            while (!ValidPassphraseWord().IsMatch(word))
+            {
+                word = generator(Faker.Hacker);
+            }
+
+            return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(word);
         }
 
         private async Task<string> GetGuestNetworkIdAsync()

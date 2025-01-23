@@ -111,6 +111,7 @@ internal sealed class AppointmentRemindersApp : IDisposable
                 var homeAssistantAppointments = (await calendar
                     .GetEventsAsync(DateTime.Now.AddHours(-1), TimeSpan.FromDays(30)))
                     .Where(a => !string.IsNullOrWhiteSpace(a.Location))
+                    .Where(a => a.Calendar != ScoutsCalendarEntityId)
                     .ToList();
                 var appointments = await dbContext.Appointments
                     .Where(a => a.Calendar == calendar.EntityId)
