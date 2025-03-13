@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+option csharp_namespace = "NuttyTree.NetDaemon.TestClient.gRPC";
+
+package electronics_time;
+
+service ElectronicsTimeGrpc {
+    rpc GetApplicationConfig (ApplicationConfigRequest) returns (stream ApplicationConfigResponse);
+    rpc SendDeviceStatus (DeviceStatus) returns (DeviceStatusResponse);
+}
+
+message ApplicationConfigRequest {
+}
+
+message ApplicationConfigResponse {
+    repeated Application applications = 1;
+}
+
+message Application {
+    string name = 1;
+    repeated string allowedWindowTitles = 2;
+    repeated string deniedWindowTitles = 3;
+    bool requiresTime = 4;
+    ApplicationAllowType allowType = 5;
+    repeated AllowedLocation allowedLocations = 6;
+}
+
+message AllowedLocation {
+    string location = 1;
+    ApplicationAllowType allowType = 2;
+}
+
+enum ApplicationAllowType {
+    Never = 0;
+    Daytime = 1;
+    Always = 2;
+}
+
+message DeviceStatus {
+    string currentApp = 1;
+    string currentPipApp = 2;
+}
+
+message DeviceStatusResponse {
+}
