@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Bogus" Version="35.6.3" />
     <PackageReference Include="FluentDateTime" Version="3.0.0" />
-    <PackageReference Include="Grpc.AspNetCore" Version="2.70.0" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
     <PackageReference Include="NetDaemon.AppModel" Version="25.14.1" />
     <PackageReference Include="NetDaemon.Runtime" Version="25.14.1" />
     <PackageReference Include="NetDaemon.Client" Version="25.14.1" />
