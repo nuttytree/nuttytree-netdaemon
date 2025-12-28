@@ -18,6 +18,7 @@ using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentCon
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders;
 
+[Focus]
 [NetDaemonApp]
 internal sealed class AppointmentRemindersApp : IDisposable
 {
@@ -68,20 +69,6 @@ internal sealed class AppointmentRemindersApp : IDisposable
         this.homeAssistantServices = homeAssistantServices;
         applicationStopping = applicationLifetime.ApplicationStopping;
         this.logger = logger;
-
-        // Temp code to cleanup appointments with old calendar id
-        using var scope = this.serviceScopeFactory.CreateScope();
-        using var dbContext = scope.ServiceProvider.GetRequiredService<NuttyDbContext>();
-        var oldAppointments = dbContext.Appointments
-            .Where(a => a.Calendar != FamilyCalendarEntityId && a.Calendar != ScoutsCalendarEntityId)
-            .ToListAsync()
-            .GetAwaiter()
-            .GetResult();
-        if (oldAppointments.Count > 0)
-        {
-            dbContext.RemoveRange(oldAppointments);
-            dbContext.SaveChanges();
-        }
 
         appointmentUpdatesTask = taskScheduler.CreatePeriodicTask(TimeSpan.FromSeconds(options.Value.AppointmentUpdatesSchedulePeriod), UpdateAppointmentsFromHomeAssistantAsync);
         travelTimeUpdatesTask = taskScheduler.CreateTriggerableSelfSchedulingTask(UpdateAppointmentReminderTravelTimesAsync, TimeSpan.FromSeconds(30));

@@ -9,11 +9,20 @@ public static class IServiceColectionExtensions
 {
     public static IServiceCollection AddWaze(this IServiceCollection services)
     {
-        services.AddRefitClient<IWazeApi>()
+        services.AddRefitClient<IWazeCoordinatesApi>()
             .AddDefaultRetryPolicy()
             .ConfigureHttpClient(client =>
             {
                 client.BaseAddress = new Uri("https://www.waze.com");
+                client.DefaultRequestHeaders.Clear();
+                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Mozilla", "5.0"));
+            });
+
+        services.AddRefitClient<IWazeRoutesApi>()
+            .AddDefaultRetryPolicy()
+            .ConfigureHttpClient(client =>
+            {
+                client.BaseAddress = new Uri("https://routing-livemap-am.waze.com");
                 client.DefaultRequestHeaders.Clear();
                 client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Mozilla", "5.0"));
             });
