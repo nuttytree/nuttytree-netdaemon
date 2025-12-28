@@ -21,13 +21,6 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Update="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
   <Target Name="PreBuild" BeforeTargets="PrepareForBuild">
     <Exec Command="dotnet tool update -g NetDaemon.HassModel.CodeGen --version 25.42.0" />
     <Exec Command="nd-codegen -o ../NuttyTree.NetDaemon.Infrastructure/HomeAssistant/EntitiesAndServices.cs -ns NuttyTree.NetDaemon.Infrastructure.HomeAssistant" WorkingDirectory="..\NuttyTree.NetDaemon" />

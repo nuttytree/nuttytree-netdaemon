@@ -33,11 +33,4 @@
     <Protobuf Include="ElectronicsTime\gRPC\electronics_time.proto" GrpcServices="Server" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Update="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
 </Project>
