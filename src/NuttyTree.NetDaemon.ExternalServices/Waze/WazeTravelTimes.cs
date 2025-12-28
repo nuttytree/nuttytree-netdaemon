@@ -6,13 +6,16 @@ namespace NuttyTree.NetDaemon.ExternalServices.Waze;
 
 internal sealed class WazeTravelTimes : IWazeTravelTimes
 {
-    private readonly IWazeApi wazeApi;
+    private readonly IWazeCoordinatesApi wazeCoordinatesApi;
+
+    private readonly IWazeRoutesApi wazeRoutesApi;
 
     private readonly IRateLimiter<WazeTravelTimes> rateLimiter;
 
-    public WazeTravelTimes(IWazeApi wazeApi, IRateLimiter<WazeTravelTimes> rateLimiter)
+    public WazeTravelTimes(IWazeCoordinatesApi wazeCoordinatesApi, IWazeRoutesApi wazeRoutesApi, IRateLimiter<WazeTravelTimes> rateLimiter)
     {
-        this.wazeApi = wazeApi;
+        this.wazeCoordinatesApi = wazeCoordinatesApi;
+        this.wazeRoutesApi = wazeRoutesApi;
         this.rateLimiter = rateLimiter;
         rateLimiter.DefaultDelayBetweenTasks = TimeSpan.FromSeconds(15);
     }
@@ -26,7 +29,7 @@ internal sealed class WazeTravelTimes : IWazeTravelTimes
         else
         {
             await rateLimiter.WaitAsync();
-            var results = await wazeApi.GetAddressLocationFromAddressAsync(address);
+            var results = await wazeCoordinatesApi.GetAddressLocationFromAddressAsync(address);
             return results.FirstOrDefault();
         }
     }
@@ -41,7 +44,7 @@ internal sealed class WazeTravelTimes : IWazeTravelTimes
         {
             await rateLimiter.WaitAsync();
             var offset = Convert.ToInt32((arriveTime - DateTime.Now).TotalMinutes);
-            var route = await wazeApi.GetRouteAsync(fromLocation, toLocation, offset);
+            var route = await wazeRoutesApi.GetRouteAsync(fromLocation, toLocation, offset);
             var miles = (route.Response?.Results?.Select(s => s.Length).Sum() ?? 0) / 1609.0;  // Convert from meters to miles
             var minutes = (route.Response?.TotalRouteTime ?? 0) / 60.0; // Convert from seconds to minutes
             return new TravelTime(miles, minutes);

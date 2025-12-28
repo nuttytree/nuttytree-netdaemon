@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -14,10 +15,12 @@ using NuttyTree.NetDaemon.Infrastructure.Database.Entities;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant.Extensions;
 using NuttyTree.NetDaemon.Infrastructure.Scheduler;
+using Refit;
 using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentConstants;
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders;
 
+[Focus]
 [NetDaemonApp]
 internal sealed class AppointmentRemindersApp : IDisposable
 {
@@ -69,19 +72,8 @@ internal sealed class AppointmentRemindersApp : IDisposable
         applicationStopping = applicationLifetime.ApplicationStopping;
         this.logger = logger;
 
-        // Temp code to cleanup appointments with old calendar id
-        using var scope = this.serviceScopeFactory.CreateScope();
-        using var dbContext = scope.ServiceProvider.GetRequiredService<NuttyDbContext>();
-        var oldAppointments = dbContext.Appointments
-            .Where(a => a.Calendar != FamilyCalendarEntityId && a.Calendar != ScoutsCalendarEntityId)
-            .ToListAsync()
-            .GetAwaiter()
-            .GetResult();
-        if (oldAppointments.Count > 0)
-        {
-            dbContext.RemoveRange(oldAppointments);
-            dbContext.SaveChanges();
-        }
+        var t = wazeTravelTimes.GetAddressLocationFromAddressAsync("6801 w 24th st, st. louis park, mn").GetAwaiter().GetResult();
+        var t3 = wazeTravelTimes.GetTravelTimeAsync(options.Value.HomeLocation, t!.Location, DateTime.UtcNow.AddMinutes(30)).GetAwaiter().GetResult();
 
         appointmentUpdatesTask = taskScheduler.CreatePeriodicTask(TimeSpan.FromSeconds(options.Value.AppointmentUpdatesSchedulePeriod), UpdateAppointmentsFromHomeAssistantAsync);
         travelTimeUpdatesTask = taskScheduler.CreateTriggerableSelfSchedulingTask(UpdateAppointmentReminderTravelTimesAsync, TimeSpan.FromSeconds(30));
