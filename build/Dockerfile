@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0.306 AS builder
+FROM mcr.microsoft.com/dotnet/sdk:10.0.101 AS builder
 
 ARG HOMEASSISTANT__HOST
 ARG HOMEASSISTANT__PORT
