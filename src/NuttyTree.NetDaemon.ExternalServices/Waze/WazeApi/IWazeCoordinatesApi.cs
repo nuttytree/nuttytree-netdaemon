@@ -1,5 +1,4 @@
 ﻿using NuttyTree.NetDaemon.ExternalServices.Waze.Models;
-using NuttyTree.NetDaemon.ExternalServices.Waze.WazeApi.Models;
 using Refit;
 
 namespace NuttyTree.NetDaemon.ExternalServices.Waze.WazeApi;

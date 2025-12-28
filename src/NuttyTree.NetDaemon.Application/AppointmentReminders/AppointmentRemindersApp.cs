@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -15,7 +14,6 @@ using NuttyTree.NetDaemon.Infrastructure.Database.Entities;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant.Extensions;
 using NuttyTree.NetDaemon.Infrastructure.Scheduler;
-using Refit;
 using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentConstants;
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders;
