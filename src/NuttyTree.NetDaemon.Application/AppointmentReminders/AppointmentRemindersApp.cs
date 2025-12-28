@@ -70,9 +70,6 @@ internal sealed class AppointmentRemindersApp : IDisposable
         applicationStopping = applicationLifetime.ApplicationStopping;
         this.logger = logger;
 
-        var t = wazeTravelTimes.GetAddressLocationFromAddressAsync("6801 w 24th st, st. louis park, mn").GetAwaiter().GetResult();
-        var t3 = wazeTravelTimes.GetTravelTimeAsync(options.Value.HomeLocation, t!.Location, DateTime.UtcNow.AddMinutes(30)).GetAwaiter().GetResult();
-
         appointmentUpdatesTask = taskScheduler.CreatePeriodicTask(TimeSpan.FromSeconds(options.Value.AppointmentUpdatesSchedulePeriod), UpdateAppointmentsFromHomeAssistantAsync);
         travelTimeUpdatesTask = taskScheduler.CreateTriggerableSelfSchedulingTask(UpdateAppointmentReminderTravelTimesAsync, TimeSpan.FromSeconds(30));
         announcementsTask = taskScheduler.CreateTriggerableSelfSchedulingTask(AnnounceAppointmentRemindersAsync, TimeSpan.FromSeconds(30));
