@@ -1,4 +1,4 @@
-﻿using Microsoft.OpenApi.Models;
+﻿using Microsoft.OpenApi;
 using NetDaemon.Extensions.Scheduler;
 using NetDaemon.Runtime;
 using NuttyTree.NetDaemon.Application;
