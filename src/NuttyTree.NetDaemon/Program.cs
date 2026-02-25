@@ -23,10 +23,6 @@ internal static class Program
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                    webBuilder.ConfigureKestrel(options =>
-                    {
-                        options.AllowAlternateSchemes = true;
-                    });
                 })
                 .Build();
             await host.MigrateDatabaseAsync();

@@ -10,8 +10,6 @@ public static class IServiceCollectionExtensions
         services.AddOptions<ElectronicsTimeOptions>()
             .BindConfiguration(nameof(ElectronicsTime));
 
-        services.AddGrpc();
-
         return services;
     }
 }
