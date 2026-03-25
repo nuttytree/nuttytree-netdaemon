@@ -31,18 +31,13 @@ internal sealed class RateLimiter<T> : IDisposable, IRateLimiter<T>
         }
     }
 
-    private sealed class InternalRateLimiter : IDisposable
+    private sealed class InternalRateLimiter(TimeSpan delayBetweenTasks) : IDisposable
     {
         private readonly SemaphoreSlim semaphore = new(1, 1);
 
-        private readonly TimeSpan delayBetweenTasks;
+        private readonly TimeSpan delayBetweenTasks = delayBetweenTasks;
 
         private CancellationTokenSource? nextTaskTrigger;
-
-        public InternalRateLimiter(TimeSpan delayBetweenTasks)
-        {
-            this.delayBetweenTasks = delayBetweenTasks;
-        }
 
         public async Task WaitAsync(CancellationToken cancellationToken)
         {
@@ -52,6 +47,7 @@ internal sealed class RateLimiter<T> : IDisposable, IRateLimiter<T>
             }
             finally
             {
+                nextTaskTrigger?.Dispose();  // Dispose previous token source
                 nextTaskTrigger = new CancellationTokenSource(delayBetweenTasks);
                 nextTaskTrigger.Token.Register(() =>
                 {

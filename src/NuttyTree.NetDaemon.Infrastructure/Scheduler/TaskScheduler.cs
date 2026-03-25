@@ -2,14 +2,9 @@
 
 namespace NuttyTree.NetDaemon.Infrastructure.Scheduler;
 
-internal sealed class TaskScheduler : ITaskScheduler
+internal sealed class TaskScheduler(ILogger<TaskScheduler> logger) : ITaskScheduler
 {
-    private readonly ILogger<TaskScheduler> logger;
-
-    public TaskScheduler(ILogger<TaskScheduler> logger)
-    {
-        this.logger = logger;
-    }
+    private readonly ILogger<TaskScheduler> logger = logger;
 
     public IDisposable CreatePeriodicTask(TimeSpan period, Func<CancellationToken, Task> action)
         => CreateTriggerableSelfSchedulingTask(
@@ -90,9 +85,9 @@ internal sealed class TaskScheduler : ITaskScheduler
 
         internal void ScheduleNextRun(TimeSpan nextRunIn)
         {
-            if (nextRunIn < TimeSpan.Zero)
+            if (nextRunIn < TimeSpan.FromMilliseconds(100))
             {
-                nextRunIn = TimeSpan.Zero;
+                nextRunIn = TimeSpan.FromMilliseconds(100);  // Minimum 100ms between runs
             }
             else if (nextRunIn.TotalMilliseconds > int.MaxValue)
             {
