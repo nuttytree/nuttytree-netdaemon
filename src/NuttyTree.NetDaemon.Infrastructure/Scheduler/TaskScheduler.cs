@@ -38,7 +38,7 @@ internal sealed class TaskScheduler(ILogger<TaskScheduler> logger) : ITaskSchedu
     private async Task RunTaskAsync(Func<CancellationToken, Task<TimeSpan>> action, TimeSpan onExceptionRetryIn, TriggerableTask task)
     {
         // Force the task creation to continue
-        await Task.Delay(1, task.StopRequestedToken);
+        await Task.Yield();
 
         while (!task.StopRequestedToken.IsCancellationRequested)
         {
@@ -47,6 +47,11 @@ internal sealed class TaskScheduler(ILogger<TaskScheduler> logger) : ITaskSchedu
             {
                 nextIterationIn = await action(task.StopRequestedToken);
             }
+            catch (OperationCanceledException) when (task.StopRequestedToken.IsCancellationRequested)
+            {
+                // Expected during shutdown
+                break;
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Unexpected exception in task: {Task}", $"{action.Target?.GetType().Name}.{action.Method.Name}");
@@ -54,8 +59,7 @@ internal sealed class TaskScheduler(ILogger<TaskScheduler> logger) : ITaskSchedu
 
             if (!task.StopRequestedToken.IsCancellationRequested)
             {
-                task.ScheduleNextRun(nextIterationIn ?? onExceptionRetryIn);
-                await task.AwaitNextRunAsync();
+                await task.WaitForNextRunAsync(nextIterationIn ?? onExceptionRetryIn);
             }
         }
     }
@@ -63,46 +67,60 @@ internal sealed class TaskScheduler(ILogger<TaskScheduler> logger) : ITaskSchedu
     private sealed class TriggerableTask : ITriggerableTask
     {
         private readonly CancellationTokenSource stopRequested = new();
+        private readonly SemaphoreSlim scheduleLock = new(1, 1);
 
-        private CancellationTokenSource? nextRunTrigger;
-
-        private TaskCompletionSource nextRunDue = new();
+        private CancellationTokenSource? delayTokenSource;
 
         internal CancellationToken StopRequestedToken => stopRequested.Token;
 
         public void Trigger()
         {
-            nextRunTrigger?.Cancel();
+            // Thread-safe cancellation of current delay
+            Interlocked.Exchange(ref delayTokenSource, null)?.Cancel();
         }
 
         public void Dispose()
         {
-            nextRunTrigger?.Cancel();
-            nextRunTrigger?.Dispose();
             stopRequested.Cancel();
+            delayTokenSource?.Dispose();
             stopRequested.Dispose();
+            scheduleLock.Dispose();
         }
 
-        internal void ScheduleNextRun(TimeSpan nextRunIn)
+        internal async Task WaitForNextRunAsync(TimeSpan delay)
         {
-            if (nextRunIn < TimeSpan.FromMilliseconds(100))
+            if (delay < TimeSpan.FromMilliseconds(100))
             {
-                nextRunIn = TimeSpan.FromMilliseconds(100);  // Minimum 100ms between runs
+                delay = TimeSpan.FromMilliseconds(100);  // Minimum 100ms between runs
             }
-            else if (nextRunIn.TotalMilliseconds > int.MaxValue)
+            else if (delay.TotalMilliseconds > int.MaxValue)
             {
-                nextRunIn = TimeSpan.FromMilliseconds(int.MaxValue);
+                delay = TimeSpan.FromMilliseconds(int.MaxValue);
             }
 
-            nextRunDue = new TaskCompletionSource();
-            nextRunTrigger = new CancellationTokenSource();
-            nextRunTrigger.Token.Register(() => nextRunDue.SetResult());
-            nextRunTrigger.CancelAfter(nextRunIn);
-        }
+            await scheduleLock.WaitAsync(StopRequestedToken);
+            try
+            {
+                // Dispose old token source and create new one
+                var oldTokenSource = Interlocked.Exchange(ref delayTokenSource, null);
+                oldTokenSource?.Dispose();
 
-        internal Task AwaitNextRunAsync()
-        {
-            return nextRunDue.Task.WaitAsync(StopRequestedToken);
+                var newTokenSource = CancellationTokenSource.CreateLinkedTokenSource(StopRequestedToken);
+                delayTokenSource = newTokenSource;
+
+                try
+                {
+                    await Task.Delay(delay, newTokenSource.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected when triggered or stopped
+                }
+            }
+            finally
+            {
+                scheduleLock.Release();
+            }
         }
     }
 }
