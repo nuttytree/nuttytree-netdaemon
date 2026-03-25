@@ -3,9 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using NuttyTree.NetDaemon.Application.Announcements;
 using NuttyTree.NetDaemon.Application.AppointmentReminders;
 using NuttyTree.NetDaemon.Application.ElectronicsTime.Extensions;
-using NuttyTree.NetDaemon.Application.GuestPasswordUpdate;
-using NuttyTree.NetDaemon.ExternalServices.HomeAssistantWebhook;
-using NuttyTree.NetDaemon.ExternalServices.Unifi;
 using NuttyTree.NetDaemon.ExternalServices.Waze;
 using NuttyTree.NetDaemon.Infrastructure.Database;
 using NuttyTree.NetDaemon.Infrastructure.HomeAssistant;
@@ -23,13 +20,10 @@ public static class IServiceCollectionExtensions
             .AddAppsFromAssembly(Assembly.GetExecutingAssembly())
             .AddAnnouncementsService()
             .AddAppointmentRemindersApp()
-            .AddElectronicsTimeApp()
-            .AddGuestPasswordUpdateApp();
+            .AddElectronicsTimeApp();
 
         // External Services
         services
-            .AddHomeAssistantWebhooks()
-            .AddUnifi()
             .AddWaze();
 
         // Infrastructure
