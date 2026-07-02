@@ -192,11 +192,9 @@ internal sealed class AnnouncementsService : IAnnouncementsService, IAnnouncemen
                                     _ => string.Empty,
                                 };
                                 message += nextAnnouncement.Message;
-                                homeAssistantServices?.Notify.AlexaMediaDevicesInside(new NotifyAlexaMediaDevicesInsideParameters
-                                {
-                                    Data = new { type = "announce" },
-                                    Message = message,
-                                });
+                                homeAssistantServices?.Notify.SendMessage(
+                                    new ServiceTarget { EntityIds = [homeAssistantEntities!.Notify.DevicesEverywhereAnnounce.EntityId] },
+                                    new NotifySendMessageParameters { Message = message });
                             }
                         }
 
