@@ -129,7 +129,7 @@ internal sealed class AppointmentRemindersApp : IDisposable
                             ?? LocationCoordinates.Empty);
                         appointment.SetAppointmentReminderOptions(options);
 
-                        dbContext.Appointments.Add(appointment);
+                        dbContext.Add(appointment);
                         await dbContext.SaveChangesAsync(cancellationToken);
                         travelTimeUpdatesTask.Trigger();
                     }

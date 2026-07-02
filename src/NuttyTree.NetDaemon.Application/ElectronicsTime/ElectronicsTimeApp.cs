@@ -301,7 +301,7 @@ internal sealed class ElectronicsTimeApp : IDisposable
             recurringToDoListItem.Name,
             description: recurringToDoListItem.MinutesEarned > 0 ? $"{recurringToDoListItem.MinutesEarned} Minutes" : null,
             cancellationToken: cancellationToken);
-        dbContext.ToDoListItems.Add(new ToDoListItemEntity
+        dbContext.Add(new ToDoListItemEntity
         {
             Uid = createdItem.Uid,
             Name = createdItem.Summary,
