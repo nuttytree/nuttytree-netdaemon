@@ -92,6 +92,14 @@ internal sealed class ElectronicsTimeApp : IDisposable
         updateToDoListTask.Dispose();
     }
 
+    // A to do list's state is its count of needs_action items, so completing an item lowers it while adds (including
+    // our own) raise it. Only a decrease can mean there is a completed item to process. Non-numeric states such as
+    // unavailable are processed to be safe.
+    private static bool OpenItemCountDecreased(StateChange<TodoEntity, EntityState<TodoAttributes>> stateChange)
+        => !int.TryParse(stateChange.Old?.State, out var oldCount)
+            || !int.TryParse(stateChange.New?.State, out var newCount)
+            || newCount < oldCount;
+
     private void UpdateTaskTriggers()
     {
         taskTriggers.ForEach(t => t.Dispose());
@@ -107,6 +115,11 @@ internal sealed class ElectronicsTimeApp : IDisposable
 
     private async Task HandleToDoListChangeAsync(StateChange<TodoEntity, EntityState<TodoAttributes>> stateChange)
     {
+        if (!OpenItemCountDecreased(stateChange))
+        {
+            return;
+        }
+
         var todoList = stateChange.Entity;
         var completedItems = await todoList.GetItemsAsync(ToDoListItemStatus.completed);
         if (completedItems.Count > 0)
@@ -149,6 +162,11 @@ internal sealed class ElectronicsTimeApp : IDisposable
 
     private async Task HandleReviewListChangeAsync(StateChange<TodoEntity, EntityState<TodoAttributes>> stateChange)
     {
+        if (!OpenItemCountDecreased(stateChange))
+        {
+            return;
+        }
+
         var reviewList = stateChange.Entity;
         var reviewedItems = await reviewList.GetItemsAsync(ToDoListItemStatus.completed);
         if (reviewedItems.Count > 0)
@@ -233,10 +251,19 @@ internal sealed class ElectronicsTimeApp : IDisposable
 
     private async Task AddNewToDoListItemsAsync(NuttyDbContext dbContext, DateTime utcNow, CancellationToken cancellationToken)
     {
-        foreach (var recurringItem in options.CurrentValue.ToDoListItems
-            .Where(r => r.NextOccurrence.HasValue && r.NextOccurrence <= utcNow))
+        var dueItemsByList = options.CurrentValue.ToDoListItems
+            .Where(r => r.NextOccurrence.HasValue && r.NextOccurrence <= utcNow)
+            .GroupBy(r => r.IsOptional);
+
+        foreach (var dueItems in dueItemsByList)
         {
-            await AddNewToDoListItemAsync(recurringItem, dbContext, cancellationToken);
+            var toDoList = dueItems.Key ? maysonsOptionalToDoList : maysonsToDoList;
+            var currentItems = await toDoList.GetItemsAsync(ToDoListItemStatus.needs_action);
+            var currentItemNames = currentItems.Select(c => c.Summary).ToHashSet();
+            foreach (var recurringItem in dueItems)
+            {
+                await AddNewToDoListItemAsync(recurringItem, dbContext, currentItemNames, cancellationToken);
+            }
         }
     }
 
@@ -284,15 +311,22 @@ internal sealed class ElectronicsTimeApp : IDisposable
         }
     }
 
-    private async Task AddNewToDoListItemAsync(RecurringToDoListItem recurringToDoListItem, NuttyDbContext dbContext, CancellationToken cancellationToken = default)
+    private async Task AddNewToDoListItemAsync(
+        RecurringToDoListItem recurringToDoListItem,
+        NuttyDbContext dbContext,
+        HashSet<string>? currentItemNames = null,
+        CancellationToken cancellationToken = default)
     {
         var toDoList = recurringToDoListItem.IsOptional
             ? maysonsOptionalToDoList
             : maysonsToDoList;
 
-        var currentItems = await toDoList.GetItemsAsync(ToDoListItemStatus.needs_action);
-        if (currentItems.Any(c => c.Summary == recurringToDoListItem.Name))
+        currentItemNames ??= (await toDoList.GetItemsAsync(ToDoListItemStatus.needs_action)).Select(c => c.Summary).ToHashSet();
+        if (currentItemNames.Contains(recurringToDoListItem.Name))
         {
+            // The previous occurrence is still on the list so there is nothing to add, but the occurrence must be
+            // cleared or UpdateToDoListAsync will see a past NextOccurrence and re-run every 100ms.
+            recurringToDoListItem.NextOccurrence = null;
             return;
         }
 
@@ -312,6 +346,7 @@ internal sealed class ElectronicsTimeApp : IDisposable
                 : DateTime.MaxValue,
         });
         await dbContext.SaveChangesAsync(cancellationToken);
+        currentItemNames.Add(createdItem.Summary);
         recurringToDoListItem.NextOccurrence = null;
         logger.LogInformation("Added new to do list item {ToDoListItem}", recurringToDoListItem.Name);
     }
