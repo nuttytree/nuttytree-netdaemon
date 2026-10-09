@@ -147,6 +147,11 @@ internal static class AppointmentEntityExtensions
         appointment.Longitude = coordinates.Longitude;
     }
 
+    public static bool HasLocationCoordinates(this AppointmentEntity appointment)
+        => appointment.Latitude.HasValue
+            && appointment.Longitude.HasValue
+            && !appointment.GetLocationCoordinates().Equals(LocationCoordinates.Empty);
+
     public static LocationCoordinates GetLocationCoordinates(this AppointmentEntity appointment)
     {
         return new LocationCoordinates

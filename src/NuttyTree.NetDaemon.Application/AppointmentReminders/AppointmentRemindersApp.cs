@@ -124,9 +124,18 @@ internal sealed class AppointmentRemindersApp : IDisposable
 
                         appointment = homeAssistantAppointment.ToAppointmentEntity();
                         appointment.SetAppointmentPerson();
-                        appointment.SetLocationCoordinates(appointment.GetKnownLocationCoordinates(options)
-                            ?? (await wazeTravelTimes.GetAddressLocationFromAddressAsync(appointment.Location))?.Location
-                            ?? LocationCoordinates.Empty);
+                        var coordinates = appointment.GetKnownLocationCoordinates(options)
+                            ?? (await wazeTravelTimes.GetAddressLocationFromAddressAsync(appointment.Location))?.Location;
+                        if (coordinates != null)
+                        {
+                            appointment.SetLocationCoordinates(coordinates);
+                        }
+                        else
+                        {
+                            // The location is looked up again when the travel time is updated
+                            logger.LogWarning("Unable to determine the location of appointment {AppointmentSummary} at {AppointmentLocation}", appointment.Summary, appointment.Location);
+                        }
+
                         appointment.SetAppointmentReminderOptions(options);
 
                         dbContext.Add(appointment);
@@ -183,9 +192,20 @@ internal sealed class AppointmentRemindersApp : IDisposable
                         reminderToUpdate.Appointment.Summary,
                         reminderToUpdate.Appointment.StartDateTime);
 
-                    var travelTime = reminderToUpdate.GetLocationCoordinates().Equals(options.HomeLocation)
-                        ? new TravelTime(0, 0)
-                        : await wazeTravelTimes.GetTravelTimeAsync(options.HomeLocation, reminderToUpdate.GetLocationCoordinates(), reminderToUpdate.GetArriveDateTime());
+                    if (!reminderToUpdate.Appointment.HasLocationCoordinates())
+                    {
+                        var location = (await wazeTravelTimes.GetAddressLocationFromAddressAsync(reminderToUpdate.Appointment.Location))?.Location;
+                        if (location != null)
+                        {
+                            reminderToUpdate.Appointment.SetLocationCoordinates(location);
+                        }
+                    }
+
+                    var travelTime = !reminderToUpdate.Appointment.HasLocationCoordinates()
+                        ? null
+                        : reminderToUpdate.GetLocationCoordinates().Equals(options.HomeLocation)
+                            ? new TravelTime(0, 0)
+                            : await wazeTravelTimes.GetTravelTimeAsync(options.HomeLocation, reminderToUpdate.GetLocationCoordinates(), reminderToUpdate.GetArriveDateTime());
 
                     // If a Scouts appointment is more than 25 miles away it is pretty sure bet we are meeting at the Church so update the location and re-calculate the travel time
                     if (reminderToUpdate.Appointment.Calendar == ScoutsCalendarEntityId && travelTime?.Miles > 25)

@@ -14,6 +14,9 @@ internal static class AppointmentConstants
 
     public const string Mayson = nameof(Mayson);
 
+    // Used to time announcements when the travel time could not be determined, most places we go are fairly close
+    public const int DefaultTravelMinutes = 15;
+
     public static readonly LocationCoordinates RidgewoodChurchLocation = new() { Latitude = 44.923126220703125, Longitude = -93.50469207763672 };
 
     public static readonly LocationCoordinates DefaultScoutsLocation = new() { Latitude = 44.83056640625, Longitude = -93.43046569824219 };
