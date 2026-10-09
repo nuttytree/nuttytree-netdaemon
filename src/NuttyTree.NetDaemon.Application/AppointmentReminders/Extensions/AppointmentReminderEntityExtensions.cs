@@ -2,6 +2,7 @@
 using NuttyTree.NetDaemon.Application.AppointmentReminders.Options;
 using NuttyTree.NetDaemon.ExternalServices.Waze.Models;
 using NuttyTree.NetDaemon.Infrastructure.Database.Entities;
+using static NuttyTree.NetDaemon.Application.AppointmentReminders.AppointmentConstants;
 
 namespace NuttyTree.NetDaemon.Application.AppointmentReminders.Extensions;
 
@@ -26,12 +27,18 @@ internal static class AppointmentReminderEntityExtensions
     public static DateTime GetLeaveDateTime(this AppointmentReminderEntity reminder)
     {
         return reminder.GetArriveDateTime()
-           .AddMinutes(-1 * reminder.TravelMinutes ?? 0);
+           .AddMinutes(-1 * (reminder.TravelMinutes ?? DefaultTravelMinutes));
     }
 
     public static void SetTravelTime(this AppointmentReminderEntity reminder, TravelTime? travelTime, AppointmentRemindersOptions options)
     {
-        if (travelTime != null)
+        if (travelTime == null)
+        {
+            // We couldn't determine the travel time so try again soon and in the meantime announce based on the default travel time
+            reminder.NextTravelTimeUpdate = DateTime.UtcNow.AddMinutes(5);
+            reminder.SetNextAnnouncementDateTime();
+        }
+        else
         {
             reminder.TravelMiles = travelTime.Miles;
             reminder.TravelMinutes = travelTime.Minutes;
@@ -42,7 +49,7 @@ internal static class AppointmentReminderEntityExtensions
             else
             {
                 var arriveDateTime = reminder.GetArriveDateTime();
-                reminder.NextTravelTimeUpdate = reminder.TravelMiles == 0
+                reminder.NextTravelTimeUpdate = reminder.GetLocationCoordinates().Equals(options.HomeLocation)
                     ? null
                     : arriveDateTime.AddHours(-5) > DateTime.UtcNow
                         ? arriveDateTime.AddHours(-4)
@@ -94,6 +101,11 @@ internal static class AppointmentReminderEntityExtensions
             reminderMessage += isAtHome ? " has " : " needs to leave for ";
         }
 
+        if (reminder.TravelMinutes == null && !isAtHome)
+        {
+            return $"I could not determine the travel time for {reminder.Appointment.Summary}, but {(reminder.Appointment.Person == null ? "you need" : $"{reminder.Appointment.Person} needs")} to be there in approximately {FormatMinutes((reminder.NextAnnouncementType ?? 0) + DefaultTravelMinutes)}";
+        }
+
         reminderMessage += reminder.Appointment.Summary;
 
         reminderMessage += reminder.NextAnnouncementType switch
@@ -122,5 +134,17 @@ internal static class AppointmentReminderEntityExtensions
             ? null
             : reminder.GetLeaveDateTime()
                 .AddMinutes(-1 * (int?)reminder.NextAnnouncementType ?? 0);
+    }
+
+    private static string FormatMinutes(int minutes)
+    {
+        var hours = minutes / 60;
+        var remainingMinutes = minutes % 60;
+        var hoursText = hours == 1 ? "1 hour" : $"{hours} hours";
+        return hours == 0
+            ? $"{remainingMinutes} minutes"
+            : remainingMinutes == 0
+                ? hoursText
+                : $"{hoursText} and {remainingMinutes} minutes";
     }
 }
