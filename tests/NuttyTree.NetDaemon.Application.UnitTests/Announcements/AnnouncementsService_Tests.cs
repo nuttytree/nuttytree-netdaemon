@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using System.Reactive.Subjects;
+using System.Threading;
 using System.Threading.Tasks;
 using Bogus;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +28,8 @@ public class AnnouncementsService_Tests
 
     private Mock<IHaContext> haContext;
 
+    private Entities entities;
+
     private AnnouncementsService announcementsService;
 
     [Fact]
@@ -35,7 +39,7 @@ public class AnnouncementsService_Tests
         Arrange();
 
         // Act
-        await announcementsService.SendAnnouncementAsync(testMessage);
+        await announcementsService.SendAnnouncementAsync(testMessage, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         VerifyAnnouncementSent();
@@ -48,7 +52,7 @@ public class AnnouncementsService_Tests
         Arrange(houseModeIsDay: false);
 
         // Act
-        await announcementsService.SendAnnouncementAsync(testMessage);
+        await announcementsService.SendAnnouncementAsync(testMessage, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         VerifyAnnouncementSent(Times.Never);
@@ -61,7 +65,7 @@ public class AnnouncementsService_Tests
         Arrange(melissaIsNotInBed: false);
 
         // Act
-        await announcementsService.SendAnnouncementAsync(testMessage);
+        await announcementsService.SendAnnouncementAsync(testMessage, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         VerifyAnnouncementSent(Times.Never);
@@ -74,7 +78,7 @@ public class AnnouncementsService_Tests
         Arrange();
 
         // Act
-        await announcementsService.SendAnnouncementAsync(testMessage, person: testPerson);
+        await announcementsService.SendAnnouncementAsync(testMessage, person: testPerson, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         VerifyAnnouncementSent();
@@ -87,7 +91,7 @@ public class AnnouncementsService_Tests
         Arrange(testPersonIsHome: false);
 
         // Act
-        await announcementsService.SendAnnouncementAsync(testMessage, person: testPerson);
+        await announcementsService.SendAnnouncementAsync(testMessage, person: testPerson, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         VerifyAnnouncementSent(Times.Never);
@@ -100,7 +104,7 @@ public class AnnouncementsService_Tests
         Arrange(announcementsAreEnabled: false);
 
         // Act
-        await announcementsService.SendAnnouncementAsync(testMessage);
+        await announcementsService.SendAnnouncementAsync(testMessage, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         VerifyAnnouncementSent(Times.Never);
@@ -113,7 +117,7 @@ public class AnnouncementsService_Tests
         Arrange(announcementsAreEnabled: false);
 
         // Act
-        await announcementsService.SendAnnouncementAsync(testMessage, AnnouncementType.General, AnnouncementPriority.Critical);
+        await announcementsService.SendAnnouncementAsync(testMessage, AnnouncementType.General, AnnouncementPriority.Critical, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         VerifyAnnouncementSent();
@@ -131,7 +135,7 @@ public class AnnouncementsService_Tests
 #pragma warning restore CA1849 // Call async methods when in an async method
 
         // Assert
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
         VerifyAnnouncementSent(Times.Never);
     }
 
@@ -147,10 +151,10 @@ public class AnnouncementsService_Tests
 #pragma warning restore CA1849 // Call async methods when in an async method
 
         // Assert
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
         VerifyAnnouncementSent(Times.Never);
         announcementsService.EnableAnnouncements();
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
         VerifyAnnouncementSent();
     }
 
@@ -173,7 +177,7 @@ public class AnnouncementsService_Tests
         haContext.Setup(x => x.Events)
             .Returns(eventsSubject);
 
-        var entities = new Entities(haContext.Object);
+        entities = new Entities(haContext.Object);
         haContext.Setup(x => x.GetState(entities.Sensor.HouseMode.EntityId))
             .Returns(new EntityState { State = houseModeIsDay ? "Day" : faker.Random.AlphaNumeric(5) });
         haContext.Setup(x => x.GetState(entities.BinarySensor.MelissaIsInBed.EntityId))
@@ -211,10 +215,8 @@ public class AnnouncementsService_Tests
         => haContext.Verify(
             x => x.CallService(
                 "notify",
-                "alexa_media_devices_inside",
-                null,
-                It.Is<NotifyAlexaMediaDevicesInsideParameters>(p =>
-                    (p.Data.ToString().Contains("type = reminder") && p.Message.EndsWith($", {testMessage}"))
-                    || (!p.Data.ToString().Contains("type = reminder") && p.Message == $"{testMessage}"))),
+                "send_message",
+                It.Is<ServiceTarget>(t => t.EntityIds.Count == 1 && t.EntityIds.Contains(entities.Notify.DevicesEverywhereAnnounce.EntityId)),
+                It.Is<NotifySendMessageParameters>(p => p.Message == testMessage)),
             times ?? Times.Once);
 }
