@@ -9,7 +9,7 @@ public static class IServiceColectionExtensions
 {
     public static IServiceCollection AddWaze(this IServiceCollection services)
     {
-        services.AddRefitClient<IWazeCoordinatesApi>()
+        services.AddRefitGeneratedClient<IWazeCoordinatesApi>()
             .AddDefaultRetryPolicy()
             .ConfigureHttpClient(client =>
             {
@@ -18,7 +18,7 @@ public static class IServiceColectionExtensions
                 client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Mozilla", "5.0"));
             });
 
-        services.AddRefitClient<IWazeRoutesApi>()
+        services.AddRefitGeneratedClient<IWazeRoutesApi>()
             .AddDefaultRetryPolicy()
             .ConfigureHttpClient(client =>
             {
