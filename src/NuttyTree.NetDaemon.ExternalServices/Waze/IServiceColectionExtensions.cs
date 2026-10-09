@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using Microsoft.Extensions.DependencyInjection;
 using NuttyTree.NetDaemon.ExternalServices.Waze.WazeApi;
 using Refit;
@@ -13,18 +13,10 @@ public static class IServiceColectionExtensions
             .AddDefaultRetryPolicy()
             .ConfigureHttpClient(client =>
             {
-                client.BaseAddress = new Uri("https://www.waze.com");
+                client.BaseAddress = new Uri("https://gapi.waze.com");
                 client.DefaultRequestHeaders.Clear();
                 client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Mozilla", "5.0"));
-            });
-
-        services.AddRefitGeneratedClient<IWazeRoutesApi>()
-            .AddDefaultRetryPolicy()
-            .ConfigureHttpClient(client =>
-            {
-                client.BaseAddress = new Uri("https://routing-livemap-am.waze.com");
-                client.DefaultRequestHeaders.Clear();
-                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Mozilla", "5.0"));
+                client.DefaultRequestHeaders.Referrer = new Uri("https://www.waze.com/");
             });
 
         return services.AddTransient<IWazeTravelTimes, WazeTravelTimes>();
