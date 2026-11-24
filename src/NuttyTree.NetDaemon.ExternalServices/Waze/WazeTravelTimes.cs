@@ -1,14 +1,15 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using NetDaemon.HassModel;
+using NuttyTree.NetDaemon.ExternalServices.Nominatim;
 using NuttyTree.NetDaemon.ExternalServices.Waze.Models;
-using NuttyTree.NetDaemon.ExternalServices.Waze.WazeApi;
 using NuttyTree.NetDaemon.Infrastructure.RateLimiting;
 
 namespace NuttyTree.NetDaemon.ExternalServices.Waze;
 
-internal sealed class WazeTravelTimes : IWazeTravelTimes
+internal sealed partial class WazeTravelTimes : IWazeTravelTimes
 {
     // Waze blocks requests to its routing servers that do not come from a browser so routes are retrieved using the
     // Home Assistant Waze Travel Time integration, which works around this.
@@ -16,10 +17,15 @@ internal sealed class WazeTravelTimes : IWazeTravelTimes
 
     private const double DefaultTravelMinutes = 15;
 
-    // The search center Waze uses to rank address matches when one isn't provided
-    private static readonly LocationCoordinates DefaultSearchLocation = new() { Latitude = 40.713, Longitude = -74.006 };
+    // Nominatim's usage policy allows at most one request per second
+    private const string NominatimRateLimiterName = "Nominatim";
 
-    private readonly IWazeCoordinatesApi wazeCoordinatesApi;
+    // Half the size, in degrees, of the area around the search location that Nominatim ranks higher (roughly 70 miles)
+    private const double SearchAreaDegrees = 1.0;
+
+    private static readonly TimeSpan NominatimDelayBetweenRequests = TimeSpan.FromSeconds(1.1);
+
+    private readonly INominatimApi nominatimApi;
 
     private readonly IHaContext haContext;
 
@@ -28,12 +34,12 @@ internal sealed class WazeTravelTimes : IWazeTravelTimes
     private readonly ILogger<WazeTravelTimes> logger;
 
     public WazeTravelTimes(
-        IWazeCoordinatesApi wazeCoordinatesApi,
+        INominatimApi nominatimApi,
         IHaContext haContext,
         IRateLimiter<WazeTravelTimes> rateLimiter,
         ILogger<WazeTravelTimes> logger)
     {
-        this.wazeCoordinatesApi = wazeCoordinatesApi;
+        this.nominatimApi = nominatimApi;
         this.haContext = haContext;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
@@ -42,20 +48,37 @@ internal sealed class WazeTravelTimes : IWazeTravelTimes
 
     public async Task<AddressLocation?> GetAddressLocationFromAddressAsync(string? address, LocationCoordinates? nearLocation = null)
     {
-        if (address == null)
+        if (string.IsNullOrWhiteSpace(address))
         {
             return null;
         }
 
-        await rateLimiter.WaitAsync();
-        var suggestions = await wazeCoordinatesApi.GetAddressSuggestionsAsync(address, FormatCoordinates(nearLocation ?? DefaultSearchLocation));
-        var location = ParseFirstLocation(suggestions);
-        if (location == null)
+        var viewbox = nearLocation == null ? null : FormatViewbox(nearLocation);
+        foreach (var query in GetSearchQueries(address))
         {
-            logger.LogWarning("Waze returned no locations for address {Address}", address);
+            List<NominatimPlace> places;
+            try
+            {
+                await rateLimiter.WaitAsync(NominatimRateLimiterName, NominatimDelayBetweenRequests);
+                places = await nominatimApi.SearchAsync(query, viewbox);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Callers treat a missing location as "look it up again later", so don't let one failure stop them
+                logger.LogWarning(ex, "Nominatim could not look up the location of {Address}", query);
+                return null;
+            }
+
+            var location = ParseFirstLocation(places);
+            if (location != null)
+            {
+                logger.LogInformation("Nominatim found {LocationName} for address {Address}", location.Name, address);
+                return location;
+            }
         }
 
-        return location;
+        logger.LogWarning("Nominatim returned no locations for address {Address}", address);
+        return null;
     }
 
     public async Task<TravelTime?> GetTravelTimeAsync(
@@ -122,41 +145,41 @@ internal sealed class WazeTravelTimes : IWazeTravelTimes
     private static string FormatCoordinates(LocationCoordinates location)
         => string.Create(CultureInfo.InvariantCulture, $"{location.Latitude:0.000000},{location.Longitude:0.000000}");
 
-    private static AddressLocation? ParseFirstLocation(JsonElement suggestions)
+    // Nominatim's viewbox is <x1>,<y1>,<x2>,<y2>: two opposite corners as longitude,latitude
+    private static string FormatViewbox(LocationCoordinates location)
+        => string.Create(
+            CultureInfo.InvariantCulture,
+            $"{location.Longitude - SearchAreaDegrees:0.000000},{location.Latitude + SearchAreaDegrees:0.000000},{location.Longitude + SearchAreaDegrees:0.000000},{location.Latitude - SearchAreaDegrees:0.000000}");
+
+    // Calendar locations often start with a place name Nominatim doesn't know ("Some Restaurant, 123 Main St, City, ST"),
+    // so after the full location also try it from each part that starts with a street number
+    private static IEnumerable<string> GetSearchQueries(string address)
     {
-        if (suggestions.ValueKind != JsonValueKind.Array
-            || suggestions.GetArrayLength() < 2
-            || suggestions[1].ValueKind != JsonValueKind.Array)
+        var normalized = LineBreaks().Replace(address, ", ");
+        var parts = normalized.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var queries = new List<string> { string.Join(", ", parts) };
+        for (var i = 1; i < parts.Length; i++)
         {
-            return null;
+            if (char.IsDigit(parts[i][0]))
+            {
+                queries.Add(string.Join(", ", parts.Skip(i)));
+            }
         }
 
-        foreach (var suggestion in suggestions[1].EnumerateArray())
+        return queries.Distinct(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static AddressLocation? ParseFirstLocation(List<NominatimPlace>? places)
+    {
+        foreach (var place in places ?? [])
         {
-            if (suggestion.ValueKind != JsonValueKind.Array
-                || suggestion.GetArrayLength() < 4
-                || suggestion[3].ValueKind != JsonValueKind.Object)
-            {
-                continue;
-            }
-
-            var place = suggestion[3];
-            if (place.TryGetProperty("v", out var provider)
-                && provider.ValueKind == JsonValueKind.String
-                && provider.GetString()!.StartsWith("advertisement.poi-", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            if (place.TryGetProperty("y", out var latitude)
-                && latitude.ValueKind == JsonValueKind.Number
-                && place.TryGetProperty("x", out var longitude)
-                && longitude.ValueKind == JsonValueKind.Number)
+            if (double.TryParse(place.Latitude, NumberStyles.Float, CultureInfo.InvariantCulture, out var latitude)
+                && double.TryParse(place.Longitude, NumberStyles.Float, CultureInfo.InvariantCulture, out var longitude))
             {
                 return new AddressLocation
                 {
-                    Name = suggestion[0].ValueKind == JsonValueKind.String ? suggestion[0].GetString() : null,
-                    Location = new LocationCoordinates { Latitude = latitude.GetDouble(), Longitude = longitude.GetDouble() },
+                    Name = string.IsNullOrEmpty(place.Name) ? place.DisplayName : place.Name,
+                    Location = new LocationCoordinates { Latitude = latitude, Longitude = longitude },
                 };
             }
         }
@@ -192,4 +215,7 @@ internal sealed class WazeTravelTimes : IWazeTravelTimes
 
         return fastest;
     }
+
+    [GeneratedRegex(@"\s*[\r\n]+\s*")]
+    private static partial Regex LineBreaks();
 }
